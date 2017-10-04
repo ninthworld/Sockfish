@@ -1,8 +1,14 @@
-#include <stdio.h>
+#include <iostream>
+#include "cli.h"
 
-int main()
-{
-	fprintf(stdout, "Sockfish");
+int main() {
+
+	std::cout << "Sockfish AI - v0.1\n" << std::endl;
+
+	CLI::init();
+	Bitboards::init();
+
+	CLI::loop();
 
 	return 0;
 }
