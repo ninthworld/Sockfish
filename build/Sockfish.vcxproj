@@ -128,11 +128,15 @@
   <ItemGroup>
     <ClCompile Include="..\src\bitboards.cpp" />
     <ClCompile Include="..\src\cli.cpp" />
+    <ClCompile Include="..\src\game.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\moves.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\bitboards.h" />
     <ClInclude Include="..\src\cli.h" />
+    <ClInclude Include="..\src\game.h" />
+    <ClInclude Include="..\src\moves.h" />
     <ClInclude Include="..\src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -6,17 +6,21 @@
 #include <string>
 #include <vector>
 #include "bitboards.h"
-
-struct Move {
-	unsigned int from;
-	unsigned int to;
-};
+#include "moves.h"
+#include "game.h"
 
 namespace CLI {
 
-	void init();
-	void loop();
-	void printBoard();
-	bool parseMove(std::string str, Move *move);
-	Move getMove();
+	PieceColor init();
+
+	void loop(Game *game);
+	Move getMove(PieceColor currentTurn);
+	
+	void printBoard(PieceColor currentTurn, unsigned int turnNum);
+	void printBitboard(std::vector<Move> moves, Bitboard bitboard);
+
+	std::string encodePos(Pos pos);
+	std::string encodeMove(Move move);
+	Pos decodePos(std::string str);
+	Move decodeMove(std::string str);
 }

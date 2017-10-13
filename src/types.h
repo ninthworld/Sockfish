@@ -1,7 +1,9 @@
 #pragma once
 
-enum Color {
-	WHITE, RED, COLOR_NB
+enum PieceColor {
+	NO_PIECE_COLOR, 
+	WHITE, RED, 
+	PIECE_COLOR_NB
 };
 
 enum PieceType {
@@ -10,11 +12,9 @@ enum PieceType {
 	PIECE_TYPE_NB
 };
 
-enum Piece {
-	NO_PIECE,
-	W_MINI_NINJA, W_MINI_SAMURAI, W_NINJA, W_SAMURAI, W_KING,
-	R_MINI_NINJA, R_MINI_SAMURAI, R_NINJA, R_SAMURAI, R_KING,
-	PIECE_NB
+struct Piece {
+	PieceColor color;
+	PieceType type;
 };
 
 const char PieceTypeChar[PIECE_TYPE_NB] = {
