@@ -4,7 +4,7 @@
 
 int main() {
 
-	std::cout << "Sockfish AI - v0.1\n" << std::endl;
+	std::cout << AI_NAME << " - " << AI_VERSION << "\n" << std::endl;
 
 	PieceColor startColor = CLI::init();
 	Game game = Game(startColor);

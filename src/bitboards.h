@@ -17,16 +17,30 @@ struct Pos {
 Pos getPos(Bitboard bb);
 int getPosIndex(Pos pos);
 
+struct Board {
+	Bitboard piece[PIECE_COLOR_NB][PIECE_TYPE_NB];
+	int pieceCount[PIECE_COLOR_NB][PIECE_TYPE_NB];
+	PieceColor turn;
+	int ply;
+};
+
 namespace Bitboards {
 
-	extern Bitboard boardBB[PIECE_COLOR_NB][PIECE_TYPE_NB];
+	extern Bitboard tileBB[ROWS][COLS];
 
 	void init();
+	Bitboard getTileAt(Pos pos);
 
-	Piece getPieceAt(Pos pos);
+	Board createBoard();
 
-	Bitboard getBoard(Piece piece);
-	Bitboard getBoardColor(PieceColor color);
+	Piece getPieceAt(Board board, Pos pos);
 
-	void setBoard(Piece piece, Bitboard bb);
+	Bitboard getBoardPiece(Board board, Piece piece);
+	Bitboard getBoardColor(Board board, PieceColor color);
+
+	Board setBoardPiece(Board board, Piece piece, Bitboard bb);
+
+	std::vector<Pos> getBoardColorPositions(Board board, PieceColor color);
+
+	bool isBoardGameOver(Board board, PieceColor *winner);
 }

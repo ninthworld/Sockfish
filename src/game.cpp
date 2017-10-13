@@ -1,23 +1,19 @@
 #include "game.h"
 
-Game::Game(PieceColor startColor) :
-	currentTurn(startColor),
-	halfTurnNum(1),
-	turnNum(1) {
+Game::Game(PieceColor first) {
+	board = Bitboards::createBoard();
+	board.turn = first;
+	board.ply = 0;
 }
 
-PieceColor Game::getCurrentTurn() {
-	return currentTurn;
+Board Game::getBoard() {
+	return board;
 }
 
-unsigned int Game::getTurnNum() {
-	return turnNum;
+void Game::setBoard(Board b) {
+	board = b;
 }
 
-void Game::nextTurn() {
-	currentTurn = (currentTurn == WHITE ? RED : WHITE);
-	halfTurnNum++;
-	if (halfTurnNum % 2) {
-		turnNum++;
-	}
+int Game::getTurn() {
+	return (int)floor(board.ply / 2) + 1;
 }

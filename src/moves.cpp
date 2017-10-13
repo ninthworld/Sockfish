@@ -3,6 +3,7 @@
 Bitboard Moves::genMovesBB[PIECE_COLOR_NB][PIECE_TYPE_NB][ROWS][COLS][MOVE_DIRECTION_NB][MOVE_TYPE_NB][MAX_STEPS];
 
 void Moves::init() {
+
 	for (unsigned int color = WHITE; color < PIECE_COLOR_NB; ++color) {
 		for (unsigned int type = MINI_NINJA; type < PIECE_TYPE_NB; ++type) {
 			for (int row = 0; row < ROWS; ++row) {
@@ -18,11 +19,15 @@ void Moves::init() {
 								Pos jumpPos = { row + deltaDiagonal.row * (steps + 1), col + deltaDiagonal.col * (steps + 1) };
 
 								if (jumpPos.row >= 0 && jumpPos.row < ROWS && jumpPos.col >= 0 && jumpPos.col < COLS) {
-									Bitboard jumpBB = 0x1ULL << getPosIndex(jumpPos);
+									Bitboard jumpBB = Bitboards::getTileAt(jumpPos);
 									setGenMoves((PieceColor)color, (PieceType)type, pos, (MoveDirection)dir, MOVE_NORMAL, steps, jumpBB);
 
 									if ((color == WHITE && deltaDiagonal.row < 0) || (color == RED && deltaDiagonal.row > 0)) {
-										Bitboard bb = (color == WHITE ? (jumpBB << COLS) : (jumpBB >> COLS));
+										Bitboard bb = (
+											color == WHITE ? 
+											Bitboards::getTileAt({ jumpPos.row + 1, jumpPos.col }) : 
+											Bitboards::getTileAt({ jumpPos.row - 1, jumpPos.col })
+										);
 										setGenMoves((PieceColor)color, (PieceType)type, pos, (MoveDirection)dir, MOVE_ATTACK, steps, bb);
 									}
 									else {
@@ -34,11 +39,15 @@ void Moves::init() {
 								Pos jumpPos = { row + deltaStraight.row * (steps + 1), col + deltaStraight.col * (steps + 1) };
 
 								if (jumpPos.row >= 0 && jumpPos.row < ROWS && jumpPos.col >= 0 && jumpPos.col < COLS) {
-									Bitboard jumpBB = 0x1ULL << getPosIndex(jumpPos);
+									Bitboard jumpBB = Bitboards::getTileAt(jumpPos);
 									setGenMoves((PieceColor)color, (PieceType)type, pos, (MoveDirection)dir, MOVE_NORMAL, steps, jumpBB);
 
 									if (deltaStraight.col != 0) {
-										Bitboard bb = (color == WHITE ? (jumpBB << COLS) : (jumpBB >> COLS));
+										Bitboard bb = (
+											color == WHITE ? 
+											Bitboards::getTileAt({ jumpPos.row + 1, jumpPos.col }) :
+											Bitboards::getTileAt({ jumpPos.row - 1, jumpPos.col })
+										);
 										setGenMoves((PieceColor)color, (PieceType)type, pos, (MoveDirection)dir, MOVE_ATTACK, steps, bb);
 									}
 									else if ((color == WHITE && deltaStraight.row < 0) || (color == RED && deltaStraight.row > 0)) {
@@ -66,14 +75,14 @@ void Moves::setGenMoves(PieceColor color, PieceType pieceType, Pos pos, MoveDire
 	genMovesBB[color][pieceType][pos.row][pos.col][dir][moveType][step] = bb;
 }
 
-std::vector<Move> Moves::getLegalMoves(Pos pos, PieceColor currentTurn, Bitboard *bb) {
+std::vector<Move> Moves::getLegalMoves(Board board, Pos pos, PieceColor currentTurn, Bitboard *bb) {
 	std::vector<Move> legalMoves;
 
-	Piece piece = Bitboards::getPieceAt(pos);
+	Piece piece = Bitboards::getPieceAt(board, pos);
 
 	if (piece.color && piece.type && piece.color == currentTurn) {
-		Bitboard whiteBB = Bitboards::getBoardColor(WHITE);
-		Bitboard redBB = Bitboards::getBoardColor(RED);
+		Bitboard whiteBB = Bitboards::getBoardColor(board, WHITE);
+		Bitboard redBB = Bitboards::getBoardColor(board, RED);
 		Bitboard allBBInv = ~(whiteBB | redBB);
 
 		unsigned int maxSteps = (piece.type == MINI_NINJA || piece.type == MINI_SAMURAI ? 1 : MAX_STEPS);
@@ -87,7 +96,9 @@ std::vector<Move> Moves::getLegalMoves(Pos pos, PieceColor currentTurn, Bitboard
 					if ((piece.color == WHITE && (attackBB & redBB)) ||
 						(piece.color == RED && (attackBB & whiteBB))) {
 						legalMoves.push_back({ pos, getPos(moveToBB) });
-						*bb |= moveToBB;
+						if(bb != nullptr) {
+							*bb |= moveToBB;
+						}
 					}
 				}
 				else {
@@ -100,51 +111,70 @@ std::vector<Move> Moves::getLegalMoves(Pos pos, PieceColor currentTurn, Bitboard
 	return legalMoves;
 }
 
-bool Moves::isMoveLegal(Move move, PieceColor currentTurn) {
-	Bitboard moveBB = 0x1ULL << getPosIndex(move.to);
+bool Moves::isMoveLegal(Board board, Move move, PieceColor currentTurn) {
+	Bitboard moveBB = Bitboards::getTileAt(move.to);
 
 	Bitboard legalMovesBB = 0x0ULL;
-	getLegalMoves(move.from, currentTurn, &legalMovesBB);
+	getLegalMoves(board, move.from, currentTurn, &legalMovesBB);
 
 	return (legalMovesBB & moveBB);
 }
 
-void Moves::doMove(Move move) {
-	Piece piece = Bitboards::getPieceAt(move.from);
+Board Moves::doMove(Board board, Move move, bool *hiya) {
+	Piece piece = Bitboards::getPieceAt(board, move.from);
 
-	Bitboard fromBB = 0x1ULL << getPosIndex(move.from);
-	Bitboard toBB = 0x1ULL << getPosIndex(move.to);
+	Bitboard fromBB = Bitboards::getTileAt(move.from);
+	Bitboard toBB = Bitboards::getTileAt(move.to);
 
-	Bitboards::setBoard(piece, Bitboards::getBoard(piece) ^ (fromBB | toBB));
+	board = Bitboards::setBoardPiece(board, piece, Bitboards::getBoardPiece(board, piece) ^ (fromBB | toBB));
 
 	Piece attack;
 	switch (piece.color) {
 	case WHITE:
-		attack = Bitboards::getPieceAt({ move.to.row + 1, move.to.col });
+		attack = Bitboards::getPieceAt(board, { move.to.row + 1, move.to.col });
 		if (attack.color == RED) {
-			Bitboard attackBB = (toBB << COLS);
-			Bitboards::setBoard(attack, Bitboards::getBoard(attack) ^ attackBB);
+			Bitboard attackBB = Bitboards::getTileAt({ move.to.row + 1, move.to.col });
+			board = Bitboards::setBoardPiece(board, attack, Bitboards::getBoardPiece(board, attack) ^ attackBB);
+			board.pieceCount[attack.color][attack.type]--;
 
 			if (attack.type == NINJA) {
-				Bitboards::setBoard({ attack.color, MINI_NINJA }, Bitboards::getBoard({ attack.color, MINI_NINJA }) ^ attackBB);
+				board = Bitboards::setBoardPiece(board, { attack.color, MINI_NINJA }, Bitboards::getBoardPiece(board, { attack.color, MINI_NINJA }) ^ attackBB);
+				board.pieceCount[attack.color][MINI_NINJA]++;
 			} else if (attack.type == SAMURAI) {
-				Bitboards::setBoard({ attack.color, MINI_SAMURAI }, Bitboards::getBoard({ attack.color, MINI_SAMURAI }) ^ attackBB);
+				board = Bitboards::setBoardPiece(board, { attack.color, MINI_SAMURAI }, Bitboards::getBoardPiece(board, { attack.color, MINI_SAMURAI }) ^ attackBB);
+				board.pieceCount[attack.color][MINI_SAMURAI]++;
+			}
+
+			if (hiya != nullptr) {
+				*hiya = true;
 			}
 		}
 		break;
 	case RED:
-		attack = Bitboards::getPieceAt({ move.to.row - 1, move.to.col });
+		attack = Bitboards::getPieceAt(board, { move.to.row - 1, move.to.col });
 		if (attack.color == WHITE) {
-			Bitboard attackBB = (toBB >> COLS);
-			Bitboards::setBoard(attack, Bitboards::getBoard(attack) ^ attackBB);
+			Bitboard attackBB = Bitboards::getTileAt({ move.to.row - 1, move.to.col });
+			board = Bitboards::setBoardPiece(board, attack, Bitboards::getBoardPiece(board, attack) ^ attackBB);
+			board.pieceCount[attack.color][attack.type]--;
 
 			if (attack.type == NINJA) {
-				Bitboards::setBoard({ attack.color, MINI_NINJA }, Bitboards::getBoard({ attack.color, MINI_NINJA }) ^ attackBB);
+				board = Bitboards::setBoardPiece(board, { attack.color, MINI_NINJA }, Bitboards::getBoardPiece(board, { attack.color, MINI_NINJA }) ^ attackBB);
+				board.pieceCount[attack.color][MINI_NINJA]++;
 			}
 			else if (attack.type == SAMURAI) {
-				Bitboards::setBoard({ attack.color, MINI_SAMURAI }, Bitboards::getBoard({ attack.color, MINI_SAMURAI }) ^ attackBB);
+				board = Bitboards::setBoardPiece(board, { attack.color, MINI_SAMURAI }, Bitboards::getBoardPiece(board, { attack.color, MINI_SAMURAI }) ^ attackBB);
+				board.pieceCount[attack.color][MINI_SAMURAI]++;
+			}
+
+			if (hiya != nullptr) {
+				*hiya = true;
 			}
 		}
 		break;
 	}
+
+	board.ply++;
+	board.turn = (board.turn == WHITE ? RED : WHITE);
+
+	return board;
 }

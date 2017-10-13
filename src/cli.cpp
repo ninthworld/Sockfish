@@ -18,20 +18,66 @@ PieceColor CLI::init() {
 
 void CLI::loop(Game *game) {
 
-	while (true) {
-		printBoard(game->getCurrentTurn(), game->getTurnNum());
+	PieceColor winner = NO_PIECE_COLOR;
+	while (!Bitboards::isBoardGameOver(game->getBoard(), &winner)) {
+		printBoard(game);
 
-		if (game->getCurrentTurn() == WHITE) {
-			Move move = getMove(game->getCurrentTurn());
-			Moves::doMove(move);
+		if (game->getBoard().turn == WHITE) {
+			// Player Move
+
+			Move move = getMove(game);
+			
+			std::cout << "Player moved " << encodeMove(move);
+
+			bool hiya = false;
+			Board newBoard = Moves::doMove(game->getBoard(), move, &hiya);
+			game->setBoard(newBoard);
+
+			if (hiya) {
+				std::cout << " HiYA!" << std::endl;
+			}
+			else {
+				std::cout << std::endl;
+			}
 		}
+		else {
+			// AI Move
 
-		game->nextTurn();
+			Move move = AI::getBestMove(game->getBoard());
+
+			std::cout << "AI moved " << encodeMove(move);
+
+			bool hiya = false;
+			Board newBoard = Moves::doMove(game->getBoard(), move, &hiya);
+			game->setBoard(newBoard);
+
+			if (hiya) {
+				std::cout << " HiYA!" << std::endl;
+			}
+			else {
+				std::cout << std::endl;
+			}
+		}
 	}
 
+	if (winner == WHITE) {
+		std::cout << "White Wins!" << std::endl;
+	}
+	else if (winner == RED) {
+		std::cout << "Red Wins!" << std::endl;
+	}
+
+	std::string token;
+	std::cout << "Would you like to play again (Y/n)? ";
+	getline(std::cin, token);
+
+	if (token.length() < 1 || token.at(0) == 'Y' || token.at(0) == 'y') {
+		Game game = Game(init());
+		CLI::loop(&game);
+	}
 }
 
-Move CLI::getMove(PieceColor currentTurn) {
+Move CLI::getMove(Game *game) {
 
 	std::string token;
 	std::cout << "Please enter your move: ";
@@ -43,7 +89,7 @@ Move CLI::getMove(PieceColor currentTurn) {
 	}
 	catch (std::exception e) {
 		std::cout << "Invalid input. (Use format 'A1B2')" << std::endl;
-		return getMove(currentTurn);
+		return getMove(game);
 	}
 
 	/*
@@ -52,15 +98,15 @@ Move CLI::getMove(PieceColor currentTurn) {
 	printBitboard(moves, legalMovesBB);
 	*/
 
-	if (!Moves::isMoveLegal(move, currentTurn)) {
+	if (!Moves::isMoveLegal(game->getBoard(), move, game->getBoard().turn)) {
 		std::cout << "Invalid move." << std::endl;
-		return getMove(currentTurn);
+		return getMove(game);
 	}
 
 	return move;
 }
 
-void CLI::printBoard(PieceColor currentTurn, unsigned int turnNum) {
+void CLI::printBoard(Game *game) {
 	HANDLE stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD wOldColorAttrs;
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
@@ -68,14 +114,14 @@ void CLI::printBoard(PieceColor currentTurn, unsigned int turnNum) {
 	GetConsoleScreenBufferInfo(stdHandle, &csbiInfo);
 	wOldColorAttrs = csbiInfo.wAttributes;
 	
-	std::cout << "\nTurn #" << turnNum << "\n";
+	std::cout << "\nTurn #" << game->getTurn() << "\n";
 
-	std::cout << "   --------------------- " << (currentTurn == RED ? "(turn)" : "      ") << " Sockfish AI\n";
+	std::cout << "   --------------------- " << (game->getBoard().turn == RED ? "(turn)" : "      ") << " " << AI_NAME << "\n";
 	
 	for (int i = 0; i < ROWS; ++i) {
 		std::printf(" %d ", 8 - i);
 		for (int j = 0; j < COLS; ++j) {
-			Piece piece = Bitboards::getPieceAt({ 7 - i, j });
+			Piece piece = Bitboards::getPieceAt(game->getBoard(), { 7 - i, j });
 
 			WORD bg = ((j + i*COLS) % 2 ? BACKGROUND_BLUE : 0) | 1;
 			WORD fg = (piece.color == RED ? FOREGROUND_RED : 15) | FOREGROUND_INTENSITY;
@@ -86,7 +132,7 @@ void CLI::printBoard(PieceColor currentTurn, unsigned int turnNum) {
 		std::cout << "\n";
 	}
 
-	std::cout << "   --------------------- " << (currentTurn == WHITE ? "(turn)" : "      ") << " Human\n";
+	std::cout << "   --------------------- " << (game->getBoard().turn == WHITE ? "(turn)" : "      ") << " Human\n";
 	std::cout << "    A  B  C  D  E  F  G \n" << std::endl;
 }
 

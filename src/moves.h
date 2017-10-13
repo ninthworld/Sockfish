@@ -28,8 +28,8 @@ namespace Moves {
 	Bitboard getGenMoves(PieceColor color, PieceType pieceType, Pos pos, MoveDirection dir, MoveType moveType, unsigned int step);
 	void setGenMoves(PieceColor color, PieceType pieceType, Pos pos, MoveDirection dir, MoveType moveType, unsigned int step, Bitboard bb);
 
-	std::vector<Move> getLegalMoves(Pos pos, PieceColor currentTurn, Bitboard *bb);
-	bool isMoveLegal(Move move, PieceColor currentTurn);
+	std::vector<Move> getLegalMoves(Board board, Pos pos, PieceColor currentTurn, Bitboard *bb);
+	bool isMoveLegal(Board board, Move move, PieceColor currentTurn);
 
-	void doMove(Move move);
+	Board doMove(Board board, Move move, bool *hiya);
 }

@@ -1,18 +1,17 @@
 #pragma once
 
 #include "types.h"
+#include "bitboards.h"
 
 class Game {
 public:
-	Game(PieceColor firstColor);
+	Game(PieceColor first);
 
-	PieceColor getCurrentTurn();
-	unsigned int getTurnNum();
+	Board getBoard();
+	void setBoard(Board board);
 
-	void nextTurn();
+	int getTurn();
 
 private:
-	PieceColor currentTurn;
-	unsigned int halfTurnNum;
-	unsigned int turnNum;
+	Board board;
 };

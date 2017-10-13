@@ -8,15 +8,16 @@
 #include "bitboards.h"
 #include "moves.h"
 #include "game.h"
+#include "ai.h"
 
 namespace CLI {
 
 	PieceColor init();
 
 	void loop(Game *game);
-	Move getMove(PieceColor currentTurn);
+	Move getMove(Game *game);
 	
-	void printBoard(PieceColor currentTurn, unsigned int turnNum);
+	void printBoard(Game *game);
 	void printBitboard(std::vector<Move> moves, Bitboard bitboard);
 
 	std::string encodePos(Pos pos);

@@ -1,5 +1,8 @@
 #pragma once
 
+#define AI_NAME "Sockfish AI"
+#define AI_VERSION "v0.2"
+
 enum PieceColor {
 	NO_PIECE_COLOR, 
 	WHITE, RED, 
