@@ -126,23 +126,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\ai.cpp" />
-    <ClCompile Include="..\src\bitboards.cpp" />
+    <ClCompile Include="..\src\bitboard.cpp" />
     <ClCompile Include="..\src\cli.cpp" />
-    <ClCompile Include="..\src\game.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\moves.cpp" />
+    <ClCompile Include="..\src\movegen.cpp" />
+    <ClCompile Include="..\src\movepick.cpp" />
+    <ClCompile Include="..\src\position.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\ai.h" />
-    <ClInclude Include="..\src\bitboards.h" />
+    <ClInclude Include="..\src\bitboard.h" />
     <ClInclude Include="..\src\cli.h" />
-    <ClInclude Include="..\src\game.h" />
-    <ClInclude Include="..\src\moves.h" />
+    <ClInclude Include="..\src\movegen.h" />
+    <ClInclude Include="..\src\movepick.h" />
+    <ClInclude Include="..\src\position.h" />
     <ClInclude Include="..\src\types.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
