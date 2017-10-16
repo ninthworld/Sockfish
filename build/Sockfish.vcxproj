@@ -130,15 +130,15 @@
     <ClCompile Include="..\src\cli.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\movegen.cpp" />
-    <ClCompile Include="..\src\movepick.cpp" />
     <ClCompile Include="..\src\position.cpp" />
+    <ClCompile Include="..\src\search.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\bitboard.h" />
     <ClInclude Include="..\src\cli.h" />
     <ClInclude Include="..\src\movegen.h" />
-    <ClInclude Include="..\src\movepick.h" />
     <ClInclude Include="..\src\position.h" />
+    <ClInclude Include="..\src\search.h" />
     <ClInclude Include="..\src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

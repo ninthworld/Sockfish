@@ -27,10 +27,10 @@
     <ClCompile Include="..\src\position.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\movepick.cpp">
+    <ClCompile Include="..\src\movegen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\movegen.cpp">
+    <ClCompile Include="..\src\search.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,10 +47,10 @@
     <ClInclude Include="..\src\position.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\movepick.h">
+    <ClInclude Include="..\src\movegen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\movegen.h">
+    <ClInclude Include="..\src\search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
