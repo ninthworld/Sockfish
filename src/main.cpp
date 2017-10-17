@@ -26,7 +26,14 @@ int main() {
 
 	std::cout << std::endl;
 
-	CLI::loop();
+	std::string token;
+	do {
+		
+		CLI::loop();
+
+		if (!CLI::promptYesNo("Would you like to play again"))
+			break;
+	} while (true);
 
 	return 0;
 }

@@ -9,7 +9,7 @@ Position::Position() {
 
 }
 
-void Position::set_starting(Color moveFirst) {
+void Position::set_starting(Color moveFirst, Color ai) {
 	std::memset(this, 0, sizeof(Position));
 
 	for(Piece p = W_MINI_NINJA; p <= R_KING; ++p)
@@ -30,8 +30,75 @@ void Position::set_starting(Color moveFirst) {
 
 	sideToMove	= moveFirst;
 	gamePly		= 0;
+
+	sideAi = ai;
 }
 
-//void Position::do_move(Move m, StateInfo &newState, bool givesCheck) {
-//
-//}
+void Position::do_move(Move m, StateInfo &newSt) {
+	
+	newSt.previous = st;
+	st = &newSt;
+
+	++gamePly;
+
+	Color c = sideToMove;
+	Color nC = ~c;
+	Square from = from_sq(m);
+	Square to = to_sq(m);
+	Piece pc = piece_on(from);
+
+	move_piece(pc, from, to);
+	
+	Square attackSquare = make_square(file_of(to), rank_of(to) + (Rank)(c == WHITE ? 1 : -1));
+	Piece attackPc = piece_on(attackSquare);
+	if (attackPc != NO_PIECE) {
+		if (color_of(attackPc) == nC) {
+			remove_piece(attackPc, attackSquare);
+
+			PieceType attackPt = type_of(attackPc);
+			if (attackPt == NINJA) {
+				put_piece(make_piece(nC, MINI_NINJA), attackSquare);
+			}
+			else if (attackPt == SAMURAI) {
+				put_piece(make_piece(nC, MINI_SAMURAI), attackSquare);
+			}
+		}
+		else {
+			attackPc = NO_PIECE;
+		}
+	}
+
+	newSt.attackedPiece = attackPc;
+
+	sideToMove = nC;
+}
+
+void Position::undo_move(Move m) {
+
+	sideToMove = ~sideToMove;
+
+	Color c = sideToMove;
+	Color nC = ~c;
+	Square from = from_sq(m);
+	Square to = to_sq(m);
+	Piece pc = piece_on(to);
+
+	move_piece(pc, to, from);
+
+	if (st->attackedPiece != NO_PIECE) {
+		Square attackedSquare = make_square(file_of(to), rank_of(to) +(Rank)(c == WHITE ? 1 : -1));
+
+		PieceType attackPt = type_of(st->attackedPiece);
+		if (attackPt == NINJA) {
+			remove_piece(make_piece(nC, MINI_NINJA), attackedSquare);
+		}
+		else if (attackPt == SAMURAI) {
+			remove_piece(make_piece(nC, MINI_SAMURAI), attackedSquare);
+		}
+
+		put_piece(st->attackedPiece, attackedSquare);
+	}
+	
+	st = st->previous;
+	--gamePly;
+}

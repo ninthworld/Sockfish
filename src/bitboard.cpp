@@ -122,7 +122,7 @@ Bitboard sliding_attack(Square deltas[], Square sq, Bitboard occupied) {
 		}
 	}
 
-	return attack;
+	return range_mask(attack);
 }
 
 void init_magics(Bitboard table[], Magic magics[], Square deltas[]) {

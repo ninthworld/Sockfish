@@ -3,10 +3,18 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
+#include <chrono>
 
 typedef uint64_t Key;
 typedef uint64_t Bitboard;
+typedef std::chrono::milliseconds::rep TimePoint;
 
+inline TimePoint now() {
+	return std::chrono::duration_cast<std::chrono::milliseconds>
+		(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+const TimePoint MAX_TIME = 4998; // 4.998 seconds
 const int MAX_MOVES = 256;
 const int MAX_PLY	= 128;
 

@@ -30,3 +30,17 @@ struct MoveList {
 private:
 	ExtMove moveList[MAX_MOVES], *last;
 };
+
+class MovePicker {
+public:
+	MovePicker(const Position &p);
+	Move next_move();
+
+private:
+	ExtMove* begin() { return cur; }
+	ExtMove* end() { return endMoves; }
+
+	const Position &pos;
+	ExtMove *cur, *endMoves;
+	ExtMove moves[MAX_MOVES];
+};

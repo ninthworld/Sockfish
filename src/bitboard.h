@@ -13,6 +13,7 @@ void initMagicBBs();
 
 const Bitboard AllSquares = ~Bitboard(0);
 const Bitboard DarkSquares = 0x55AA55AA55AA55ULL;
+const Bitboard RangeSquares = 0xFFFFFFFFFFFFFFULL;
 
 const Bitboard FileABB = 0xFF;
 const Bitboard FileBBB = FileABB << (8 * 1);
@@ -98,6 +99,10 @@ inline Bitboard square_bb(Square s) {
 	return SquareBB[s];
 }
 
+inline Bitboard range_mask(Bitboard b) {
+	return b & RangeSquares;
+}
+
 template<Square D>
 inline Bitboard shift(Bitboard b) {
 	switch (D) {
@@ -106,17 +111,17 @@ inline Bitboard shift(Bitboard b) {
 	case SOUTH:
 		return (b & ~Rank1BB) >> 1;
 	case EAST:
-		return b << 8;
+		return (b & ~FileGBB) << 8;
 	case WEST:
-		return b >> 8;
+		return (b & ~FileABB) >> 8;
 	case NORTH_EAST:
-		return ((b & ~Rank8BB) << 1) << 8;
+		return (((b & ~Rank8BB) << 1) & ~FileGBB) << 8;
 	case SOUTH_EAST:
-		return ((b & ~Rank1BB) >> 1) << 8;
+		return (((b & ~Rank1BB) >> 1) & ~FileGBB) << 8;
 	case NORTH_WEST:
-		return ((b & ~Rank8BB) << 1) >> 8;
+		return (((b & ~Rank8BB) << 1) & ~FileABB) >> 8;
 	case SOUTH_WEST:
-		return ((b & ~Rank1BB) >> 1) >> 8;
+		return (((b & ~Rank1BB) >> 1) & ~FileABB) >> 8;
 	default:
 		return 0;
 	}
@@ -130,6 +135,9 @@ template<> inline int distance<File>(Square x, Square y) { return distance(file_
 template<> inline int distance<Rank>(Square x, Square y) { return distance(rank_of(x), rank_of(y)); }
 
 inline Bitboard moves_bb(Square s, Piece p, Bitboard occupied) {
+	if (p == NO_PIECE)
+		return 0;
+
 	Color c = color_of(p);
 	PieceType pt = type_of(p);
 
@@ -141,11 +149,14 @@ inline Bitboard moves_bb(Square s, Piece p, Bitboard occupied) {
 
 	Bitboard rfBB = RankFillBB[rank_of(s)];
 	const Magic &m = (pt == NINJA ? NinjaMagics[s] : SamuraiMagics[s]);
-
-	return (m.attacks[m.index(occupied)] & ~occupied) & (c == WHITE ? ~rfBB : (rfBB ^ rank_bb(rank_of(s))));
+	unsigned index = m.index(occupied);
+	return (m.attacks[index] & ~occupied) & (c == WHITE ? ~rfBB : (rfBB ^ rank_bb(rank_of(s))));
 }
 
 inline Bitboard attacks_bb(Square s, Piece p, Bitboard whiteOccupied, Bitboard redOccupied) {
+	if (p == NO_PIECE)
+		return 0;
+
 	Color c = color_of(p);
 	PieceType pt = type_of(p);
 
@@ -160,8 +171,8 @@ inline Bitboard attacks_bb(Square s, Piece p, Bitboard whiteOccupied, Bitboard r
 	else {
 		Bitboard rfBB = RankFillBB[rank_of(s)];
 		const Magic &m = (pt == NINJA ? NinjaMagics[s] : SamuraiMagics[s]);
-		attackBB = (m.attacks[m.index(occupied)] & ~occupied) & (pt == NINJA ? (c == WHITE ? rfBB : ~rfBB) : rank_bb(rank_of(s)));
-
+		unsigned index = m.index(occupied);
+		attackBB = (m.attacks[index] & ~occupied) & (pt == NINJA ? (c == WHITE ? rfBB : ~rfBB) : rank_bb(rank_of(s)));
 	}
 
 	return attackBB & (c == WHITE ? shift<SOUTH>(redOccupied) : shift<NORTH>(whiteOccupied));

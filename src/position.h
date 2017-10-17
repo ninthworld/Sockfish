@@ -1,10 +1,17 @@
 #pragma once
 
+#include <deque>
+#include <memory>
+
 #include "bitboard.h"
 #include "types.h"
 
 struct StateInfo {
+	Piece attackedPiece;
+	StateInfo *previous;
 };
+
+//typedef std::unique_ptr<std::deque<StateInfo>> StateListPtr;
 
 class Position {
 public:
@@ -12,7 +19,7 @@ public:
 
 	Position();
 
-	void set_starting(Color moveFirst);
+	void set_starting(Color moveFirst, Color ai);
 
 	Bitboard pieces() const;
 	Bitboard pieces(PieceType pt) const;
@@ -23,8 +30,17 @@ public:
 
 	Bitboard moves(Square s) const;
 
+	bool legal(Move m) const;
+	bool is_win(Color &winner) const;
+	Value score() const;
+
+	void do_move(Move m, StateInfo &newSt);
+	void undo_move(Move m);
+
 	Color side_to_move() const;
 	int game_ply() const;
+
+	Color side_ai() const;
 
 private:
 	void put_piece(Piece pc, Square sq);
@@ -40,6 +56,9 @@ private:
 
 	int gamePly;
 	Color sideToMove;
+	StateInfo *st;
+
+	Color sideAi;
 
 }; // class Position
 
@@ -72,12 +91,68 @@ inline Bitboard Position::moves(Square s) const {
 			attacks_bb(s, board[s], byColorBB[WHITE], byColorBB[RED]));
 }
 
+inline bool Position::legal(Move m) const {
+	Square from = from_sq(m);
+	Square to = to_sq(m);
+	Piece p = piece_on(from);
+	return p != NO_PIECE && (sideToMove == color_of(p)) && (moves(from) & square_bb(to));
+}
+
+inline bool Position::is_win(Color &winner) const {
+	if (pieceCount[W_KING] < 1) {
+		winner = RED;
+		return true;
+	}
+
+	if (pieceCount[R_KING] < 1) {
+		winner = WHITE;
+		return true;
+	}
+
+	for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
+		const Square *pl = squares(WHITE, pt);
+		for (Square from = *pl; from != SQ_NONE; from = *++pl) {
+			if (moves(from)) goto checkRed;
+		}
+	}
+
+	winner = RED;
+	return true;
+
+checkRed:
+	for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
+		const Square *pl = squares(RED, pt);
+		for (Square from = *pl; from != SQ_NONE; from = *++pl) {
+			if (moves(from)) return false;
+		}
+	}
+
+	winner = WHITE;
+	return true;
+}
+
+inline Value Position::score() const {
+	return (sideAi == RED ? -1 : 1) * (
+		pieceCount[W_MINI_NINJA] * MiniNinjaValue +
+		pieceCount[W_MINI_SAMURAI] * MiniSamuraiValue +
+		pieceCount[W_NINJA] * NinjaValue +
+		pieceCount[W_SAMURAI] * SamuraiValue -
+		pieceCount[R_MINI_NINJA] * MiniNinjaValue -
+		pieceCount[R_MINI_SAMURAI] * MiniSamuraiValue -
+		pieceCount[R_NINJA] * NinjaValue -
+		pieceCount[R_SAMURAI] * SamuraiValue);
+}
+
 inline Color Position::side_to_move() const {
 	return sideToMove;
 }
 
 inline int Position::game_ply() const {
 	return gamePly;
+}
+
+inline Color Position::side_ai() const {
+	return sideAi;
 }
 
 inline void Position::put_piece(Piece pc, Square s) {

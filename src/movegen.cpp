@@ -1,6 +1,8 @@
 #include "movegen.h"
 #include "position.h"
 
+#include "cli.h"
+
 namespace {
 
 } // namespace
@@ -13,11 +15,26 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 
 		for (Square from = *pl; from != SQ_NONE; from = *++pl) {
 			Bitboard b = pos.moves(from);
-
-			while (b)
+			
+			while (b) 
 				*moveList++ = make_move(from, pop_lsb(&b));
 		}
 	}
 
 	return moveList;
+}
+
+MovePicker::MovePicker(const Position &p) : 
+	pos(p), 
+	cur(moves), 
+	endMoves(generate(pos, cur)) {
+}
+
+Move MovePicker::next_move() {
+	if (cur < endMoves) {
+		return (cur++)->move;
+	}
+	else {
+		return MOVE_NONE;
+	}
 }

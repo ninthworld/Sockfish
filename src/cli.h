@@ -13,6 +13,7 @@ void init();
 void loop();
 void printPosition(Position &pos);
 void printBitboard(Bitboard bb);
+bool promptYesNo(std::string str);
 
 std::string encode_square(Square s);
 std::string encode_move(Move m);
