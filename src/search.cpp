@@ -7,11 +7,11 @@
 
 namespace {
 
-Value search(Position &pos, Value alpha, Value beta, Depth depth, TimePoint &start);
+Value search_1(Position &pos, Value alpha, Value beta, Depth depth, TimePoint &start);
 
 } // namespace
 
-Move Search::best_move(Position &rootPos, TimePoint &start, Depth *maxDepth) {
+Move Search::best_move_1(Position &rootPos, TimePoint &start, Depth *maxDepth) {
 
 	Depth rootDepth = DEPTH_ZERO;
 	Value bestScore = -VALUE_INFINITE, score;
@@ -24,7 +24,7 @@ Move Search::best_move(Position &rootPos, TimePoint &start, Depth *maxDepth) {
 		MovePicker mp(rootPos);
 
 		while((move = mp.next_move()) != MOVE_NONE){
-			if (now() - start > MAX_TIME) {
+			if (max_time(start)) {
 				if (bestMove == MOVE_NONE) {
 					bestMove = move;
 				}
@@ -33,7 +33,7 @@ Move Search::best_move(Position &rootPos, TimePoint &start, Depth *maxDepth) {
 			}
 
 			rootPos.do_move(move, st);
-			score = ::search(rootPos, -VALUE_INFINITE, VALUE_INFINITE, rootDepth, start);
+			score = ::search_1(rootPos, -VALUE_INFINITE, VALUE_INFINITE, rootDepth, start);
 			rootPos.undo_move(move);
 			
 			if (score > bestScore || bestMove == MOVE_NONE) {
@@ -57,7 +57,7 @@ exitLoop:
 
 namespace {
 
-Value search(Position &pos, Value alpha, Value beta, Depth depth, TimePoint &start) {
+Value search_1(Position &pos, Value alpha, Value beta, Depth depth, TimePoint &start) {
 	if (depth == DEPTH_ZERO) {
 		return pos.score();
 	}
@@ -75,12 +75,12 @@ Value search(Position &pos, Value alpha, Value beta, Depth depth, TimePoint &sta
 	Move move;
 
 	while ((move = mp.next_move()) != MOVE_NONE) {
-		if (now() - start > MAX_TIME) {
+		if (max_time(start)) {
 			return bestValue;
 		}
 
 		pos.do_move(move, st);
-		value = ::search(pos, -VALUE_INFINITE, VALUE_INFINITE, depth - ONE_PLY, start);
+		value = ::search_1(pos, -VALUE_INFINITE, VALUE_INFINITE, depth - ONE_PLY, start);
 		pos.undo_move(move);
 
 		if (isMaximizing) {

@@ -40,7 +40,7 @@ void CLI::loop() {
 
 			Depth maxDepth = DEPTH_ZERO;
 			TimePoint start = now();
-			Move move = Search::best_move(pos, start, &maxDepth);
+			Move move = Search::best_move_1(pos, start, &maxDepth);
 
 			std::cout << "Move found! (" << float(now() - start) << "ms, Ply=" << maxDepth << ")" << std::endl;
 
@@ -52,6 +52,25 @@ void CLI::loop() {
 				std::cout << " HiYa!!";
 			std::cout << std::endl;
 		}
+		else {
+
+			std::cout << "Computer thinking..." << std::endl;
+
+			Depth maxDepth = DEPTH_ZERO;
+			TimePoint start = now();
+			Move move = Search::best_move_1(pos, start, &maxDepth);
+
+			std::cout << "Move found! (" << float(now() - start) << "ms, Ply=" << maxDepth << ")" << std::endl;
+
+			StateInfo st;
+			pos.do_move(move, st);
+
+			std::cout << "\nComputer moved " << encode_move(move);
+			if (st.attackedPiece != NO_PIECE)
+				std::cout << " HiYa!!";
+			std::cout << std::endl;
+		}
+		/*
 		else {
 
 			Move move;
@@ -78,6 +97,7 @@ void CLI::loop() {
 				std::cout << " HiYa!!";
 			std::cout << std::endl;
 		}
+		*/
 
 		Color winner;
 		if (pos.is_win(winner)) {

@@ -9,6 +9,6 @@ class Position;
 
 namespace Search {
 
-Move best_move(Position &rootPos, TimePoint &start, Depth *maxDepth);
+Move best_move_1(Position &rootPos, TimePoint &start, Depth *maxDepth);
 
 } // namespace Search

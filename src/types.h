@@ -9,14 +9,18 @@ typedef uint64_t Key;
 typedef uint64_t Bitboard;
 typedef std::chrono::milliseconds::rep TimePoint;
 
+const TimePoint MAX_TIME = 4998; // 4.998 seconds
+const int MAX_MOVES = 256;
+const int MAX_PLY = 128;
+
 inline TimePoint now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>
 		(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-const TimePoint MAX_TIME = 4998; // 4.998 seconds
-const int MAX_MOVES = 256;
-const int MAX_PLY	= 128;
+inline bool max_time(TimePoint start) {
+	return (now() - start) >= MAX_TIME;
+}
 
 enum Move : int {
 	MOVE_NONE,
