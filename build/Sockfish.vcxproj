@@ -132,6 +132,9 @@
     <ClCompile Include="..\src\movegen.cpp" />
     <ClCompile Include="..\src\position.cpp" />
     <ClCompile Include="..\src\search.cpp" />
+    <ClCompile Include="..\src\thread.cpp" />
+    <ClCompile Include="..\src\timer.cpp" />
+    <ClCompile Include="..\src\types.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\bitboard.h" />
@@ -139,6 +142,8 @@
     <ClInclude Include="..\src\movegen.h" />
     <ClInclude Include="..\src\position.h" />
     <ClInclude Include="..\src\search.h" />
+    <ClInclude Include="..\src\thread.h" />
+    <ClInclude Include="..\src\timer.h" />
     <ClInclude Include="..\src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

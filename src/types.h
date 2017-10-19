@@ -9,9 +9,10 @@ typedef uint64_t Key;
 typedef uint64_t Bitboard;
 typedef std::chrono::milliseconds::rep TimePoint;
 
-const TimePoint MAX_TIME = 4998; // 4.998 seconds
+const TimePoint MAX_TIME = 4990; // 4.99 seconds
 const int MAX_MOVES = 256;
 const int MAX_PLY = 128;
+const int MAX_THREADS = 1; // 4;
 
 inline TimePoint now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>
@@ -33,20 +34,16 @@ enum Color {
 
 enum Value : int {
 	VALUE_ZERO = 0,
-	VALUE_KNOWN_WIN = 10000,
-	VALUE_MATE = 32000,
 	VALUE_INFINITE = 32001,
 	VALUE_NONE = 32002,
 
-	VALUE_MATE_IN_MAX_PLY = 32000 - 2 * MAX_PLY,
-	VALUE_MATED_IN_MAX_PLY = -32000 + 2 * MAX_PLY,
+	VALUE_WIN = 32000,
+	VALUE_LOSE = -32000,
 
-	MiniNinjaValue = 171,
-	MiniSamuraiValue = 171,
-	NinjaValue = 826,
-	SamuraiValue = 1282,
-
-	Limit = 15258
+	MiniNinjaValue = 140,
+	MiniSamuraiValue = 100,
+	NinjaValue = 400,
+	SamuraiValue = 500
 };
 
 enum PieceType {
@@ -151,14 +148,6 @@ inline Piece operator~(Piece pc) {
 	return Piece(pc ^ 8);
 }
 
-inline Value mate_in(int ply) {
-	return VALUE_MATE - ply;
-}
-
-inline Value mated_in(int ply) {
-	return -VALUE_MATE + ply;
-}
-
 inline Square make_square(File f, Rank r) {
 	return Square((f << 3) + r);
 }
@@ -206,3 +195,18 @@ inline Move make_move(Square from, Square to) {
 inline bool is_ok(Move m) {
 	return from_sq(m) != to_sq(m);
 }
+
+namespace ValueMap {
+
+const int Modifier[PIECE_TYPE_NB] = {
+	0,
+	4 * MiniNinjaValue / 10,
+	4 * MiniSamuraiValue / 10,
+	4 * NinjaValue / 10,
+	4 * SamuraiValue / 10
+};
+extern int Values[PIECE_NB][SQUARE_NB];
+
+void init();
+
+} // namespace ValueMap

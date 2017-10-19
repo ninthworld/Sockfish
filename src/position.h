@@ -11,7 +11,9 @@ struct StateInfo {
 	StateInfo *previous;
 };
 
-//typedef std::unique_ptr<std::deque<StateInfo>> StateListPtr;
+typedef std::unique_ptr<std::deque<StateInfo>> StateListPtr;
+
+class Thread;
 
 class Position {
 public:
@@ -19,7 +21,8 @@ public:
 
 	Position();
 
-	void set_starting(Color moveFirst, Color ai);
+	void set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th);
+	void set(Position &pos, StateInfo *si, Thread *th);
 
 	Bitboard pieces() const;
 	Bitboard pieces(PieceType pt) const;
@@ -41,6 +44,7 @@ public:
 	int game_ply() const;
 
 	Color side_ai() const;
+	Thread* this_thread() const;
 
 private:
 	void put_piece(Piece pc, Square sq);
@@ -57,6 +61,7 @@ private:
 	int gamePly;
 	Color sideToMove;
 	StateInfo *st;
+	Thread* thisThread;
 
 	Color sideAi;
 
@@ -132,16 +137,26 @@ checkRed:
 }
 
 inline Value Position::score() const {
-	return (sideAi == RED ? -1 : 1) * (
-		pieceCount[W_MINI_NINJA] * MiniNinjaValue +
-		pieceCount[W_MINI_SAMURAI] * MiniSamuraiValue +
-		pieceCount[W_NINJA] * NinjaValue +
-		pieceCount[W_SAMURAI] * SamuraiValue -
-		pieceCount[R_MINI_NINJA] * MiniNinjaValue -
-		pieceCount[R_MINI_SAMURAI] * MiniSamuraiValue -
-		pieceCount[R_NINJA] * NinjaValue -
-		pieceCount[R_SAMURAI] * SamuraiValue);
+	Value score = Value(0);
+
+	score +=
+		(pieceCount[W_MINI_NINJA] - pieceCount[R_MINI_NINJA]) * MiniNinjaValue +
+		(pieceCount[W_MINI_SAMURAI] - pieceCount[R_MINI_SAMURAI]) * MiniSamuraiValue +
+		(pieceCount[W_NINJA] - pieceCount[R_NINJA]) * NinjaValue +
+		(pieceCount[W_SAMURAI] - pieceCount[R_SAMURAI]) * SamuraiValue;
+
+	for(Color c = WHITE; c <= RED; ++c){
+		for (PieceType pt = MINI_NINJA; pt < KING; ++pt) {
+			const Square *pl = squares(c, pt);
+			for (Square from = *pl; from != SQ_NONE; from = *++pl) {
+				score += ValueMap::Values[make_piece(c, pt)][from];
+			}
+		}
+	}
+
+	return (sideAi == RED ? -score : score);
 }
+
 
 inline Color Position::side_to_move() const {
 	return sideToMove;
@@ -153,6 +168,10 @@ inline int Position::game_ply() const {
 
 inline Color Position::side_ai() const {
 	return sideAi;
+}
+
+inline Thread* Position::this_thread() const {
+	return thisThread;
 }
 
 inline void Position::put_piece(Piece pc, Square s) {

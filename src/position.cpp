@@ -1,5 +1,6 @@
 #include "bitboard.h"
 #include "position.h"
+#include "thread.h"
 
 void Position::init() {
 	// Zobrist Key
@@ -9,13 +10,13 @@ Position::Position() {
 
 }
 
-void Position::set_starting(Color moveFirst, Color ai) {
+void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th) {
 	std::memset(this, 0, sizeof(Position));
 
 	for(Piece p = W_MINI_NINJA; p <= R_KING; ++p)
 		for (int i = 0; i < 8; ++i)
 			pieceList[p][i] = SQ_NONE;
-
+	
 	put_piece(W_MINI_NINJA, SQ_A3);		put_piece(W_MINI_NINJA, SQ_B3);		put_piece(W_MINI_NINJA, SQ_C3);
 	put_piece(W_MINI_SAMURAI, SQ_E3);	put_piece(W_MINI_SAMURAI, SQ_F3);	put_piece(W_MINI_SAMURAI, SQ_G3);
 	put_piece(W_SAMURAI, SQ_A2);		put_piece(W_SAMURAI, SQ_B2);		put_piece(W_SAMURAI, SQ_C2);
@@ -27,11 +28,34 @@ void Position::set_starting(Color moveFirst, Color ai) {
 	put_piece(R_NINJA, SQ_A7);			put_piece(R_NINJA, SQ_B7);			put_piece(R_NINJA, SQ_C7);
 	put_piece(R_SAMURAI, SQ_E7);		put_piece(R_SAMURAI, SQ_F7);		put_piece(R_SAMURAI, SQ_G7);
 	put_piece(R_KING, SQ_D8);
+	
+	/*
+	// TEST CASE
+	put_piece(W_MINI_SAMURAI, SQ_E3);	put_piece(W_MINI_SAMURAI, SQ_F3);	put_piece(W_MINI_SAMURAI, SQ_G3);
+	put_piece(W_MINI_NINJA, SQ_B4);		put_piece(W_MINI_NINJA, SQ_C5);
+	put_piece(W_NINJA, SQ_D5);			put_piece(W_NINJA, SQ_F2);			put_piece(W_NINJA, SQ_G2);
+	put_piece(W_SAMURAI, SQ_A4);		put_piece(W_SAMURAI, SQ_B2);		put_piece(W_SAMURAI, SQ_C2);
+	put_piece(W_KING, SQ_D1);
+
+	put_piece(R_MINI_NINJA, SQ_A5);		put_piece(R_MINI_NINJA, SQ_C6);		put_piece(R_MINI_NINJA, SQ_D6);
+	put_piece(R_MINI_NINJA, SQ_E6);		put_piece(R_MINI_NINJA, SQ_F6);		put_piece(R_MINI_NINJA, SQ_G6);
+	put_piece(R_SAMURAI, SQ_E7);		put_piece(R_SAMURAI, SQ_F7);		put_piece(R_SAMURAI, SQ_G7);
+	put_piece(R_KING, SQ_D8);
+	*/
 
 	sideToMove	= moveFirst;
 	gamePly		= 0;
-
 	sideAi = ai;
+
+	st = si;
+	thisThread = th;
+}
+
+void Position::set(Position &pos, StateInfo *si, Thread *th) {
+	std::memcpy(&(th->rootPos), &pos, sizeof(Position));
+	st = si;
+	thisThread = th;
+
 }
 
 void Position::do_move(Move m, StateInfo &newSt) {
@@ -49,7 +73,11 @@ void Position::do_move(Move m, StateInfo &newSt) {
 
 	move_piece(pc, from, to);
 	
-	Square attackSquare = make_square(file_of(to), rank_of(to) + (Rank)(c == WHITE ? 1 : -1));
+	Rank attackRank = rank_of(to) + (Rank)(c == WHITE ? 1 : -1);
+	if (attackRank > Rank8BB)
+		attackRank = rank_of(to);
+
+	Square attackSquare = make_square(file_of(to), attackRank);
 	Piece attackPc = piece_on(attackSquare);
 	if (attackPc != NO_PIECE) {
 		if (color_of(attackPc) == nC) {

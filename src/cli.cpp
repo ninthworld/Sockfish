@@ -5,6 +5,7 @@
 #include <windows.h>
 
 #include "position.h"
+#include "thread.h"
 #include "cli.h"
 #include "movegen.h"
 #include "search.h"
@@ -19,6 +20,8 @@ void CLI::loop() {
 
 	Position pos;
 	std::string token;
+	StateListPtr states(new std::deque<StateInfo>(1));
+	auto cliThread = std::make_shared<Thread>(0);
 
 	Color aiSide = WHITE;
 	if (promptYesNo("Would you like to play as White"))
@@ -28,7 +31,7 @@ void CLI::loop() {
 	if (promptYesNo("Would you like to move first"))
 		firstTurn = ~aiSide;
 
-	pos.set_starting(firstTurn, aiSide);
+	pos.set_starting(firstTurn, aiSide, &states->back(), cliThread.get());
 	
 	while (true) {
 
@@ -38,29 +41,13 @@ void CLI::loop() {
 
 			std::cout << "Computer thinking..." << std::endl;
 
-			Depth maxDepth = DEPTH_ZERO;
-			TimePoint start = now();
-			Move move = Search::best_move_1(pos, start, &maxDepth);
+			TimePoint startTime = now();
+			Threads.start_thinking(pos, states, startTime);
+			Threads.main()->wait_for_search_finished();
 
-			std::cout << "Move found! (" << float(now() - start) << "ms, Ply=" << maxDepth << ")" << std::endl;
+			Move move = Threads.best_thread()->rootMoves[0].pv;
 
-			StateInfo st;
-			pos.do_move(move, st);
-
-			std::cout << "\nComputer moved " << encode_move(move);
-			if (st.attackedPiece != NO_PIECE)
-				std::cout << " HiYa!!";
-			std::cout << std::endl;
-		}
-		else {
-
-			std::cout << "Computer thinking..." << std::endl;
-
-			Depth maxDepth = DEPTH_ZERO;
-			TimePoint start = now();
-			Move move = Search::best_move_1(pos, start, &maxDepth);
-
-			std::cout << "Move found! (" << float(now() - start) << "ms, Ply=" << maxDepth << ")" << std::endl;
+			std::cout << "Move found! (" << float(now() - startTime) << "ms, depth=" << Threads.best_thread()->completedDepth << ")" << std::endl;
 
 			StateInfo st;
 			pos.do_move(move, st);
@@ -69,8 +56,9 @@ void CLI::loop() {
 			if (st.attackedPiece != NO_PIECE)
 				std::cout << " HiYa!!";
 			std::cout << std::endl;
+
+			Search::clear();
 		}
-		/*
 		else {
 
 			Move move;
@@ -96,8 +84,7 @@ void CLI::loop() {
 			if (st.attackedPiece != NO_PIECE)
 				std::cout << " HiYa!!";
 			std::cout << std::endl;
-		}
-		*/
+		}		
 
 		Color winner;
 		if (pos.is_win(winner)) {
