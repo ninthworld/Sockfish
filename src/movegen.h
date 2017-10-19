@@ -8,9 +8,16 @@ class Position;
 
 struct ExtMove {
 	Move move;
+	Value score = -VALUE_INFINITE;
+	Value prevScore = -VALUE_INFINITE;
 
 	operator Move() const { return move; }
 	void operator=(Move m) { move = m; }
+	bool operator==(const Move &m) const { return move == m; }
+	bool operator<(const ExtMove &m) const {
+		return m.score != score ? m.score < score
+			: m.prevScore < prevScore;
+	}
 };
 
 ExtMove* generate(const Position &pos, ExtMove *moveList);

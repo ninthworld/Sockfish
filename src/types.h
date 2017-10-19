@@ -42,7 +42,7 @@ enum Value : int {
 
 	MiniNinjaValue = 140,
 	MiniSamuraiValue = 100,
-	NinjaValue = 400,
+	NinjaValue = 540,
 	SamuraiValue = 500
 };
 
@@ -196,14 +196,22 @@ inline bool is_ok(Move m) {
 	return from_sq(m) != to_sq(m);
 }
 
+inline Square invert(Square s) {
+	return make_square(FILE_G - file_of(s), RANK_8 - rank_of(s));
+}
+
+inline Move invert(Move m) {
+	return make_move(invert(from_sq(m)), invert(to_sq(m)));
+}
+
 namespace ValueMap {
 
 const int Modifier[PIECE_TYPE_NB] = {
 	0,
-	4 * MiniNinjaValue / 10,
-	4 * MiniSamuraiValue / 10,
-	4 * NinjaValue / 10,
-	4 * SamuraiValue / 10
+	2 * MiniNinjaValue / 10,
+	2 * MiniSamuraiValue / 10,
+	2 * NinjaValue / 10,
+	2 * SamuraiValue / 10
 };
 extern int Values[PIECE_NB][SQUARE_NB];
 

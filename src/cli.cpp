@@ -23,9 +23,12 @@ void CLI::loop() {
 	StateListPtr states(new std::deque<StateInfo>(1));
 	auto cliThread = std::make_shared<Thread>(0);
 
+	Color aiSide = RED;
+	/*
 	Color aiSide = WHITE;
 	if (promptYesNo("Would you like to play as White"))
 		aiSide = RED;
+	*/
 
 	Color firstTurn = aiSide;
 	if (promptYesNo("Would you like to move first"))
@@ -52,7 +55,8 @@ void CLI::loop() {
 			StateInfo st;
 			pos.do_move(move, st);
 
-			std::cout << "\nComputer moved " << encode_move(move);
+			std::cout << "\nComputer moved " << encode_move(move) 
+				<< " (" << encode_move(invert(move)) << ")"; 
 			if (st.attackedPiece != NO_PIECE)
 				std::cout << " HiYa!!";
 			std::cout << std::endl;
