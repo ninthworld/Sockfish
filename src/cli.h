@@ -13,6 +13,7 @@ void init();
 void loop();
 void printPosition(Position &pos);
 void printBitboard(Bitboard bb);
+void printPV(Position &pos, Depth depth, Value alpha, Value beta);
 bool promptYesNo(std::string str);
 
 std::string encode_square(Square s);

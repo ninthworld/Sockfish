@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "movegen.h"
 #include "types.h"
 
 class Position;
@@ -10,7 +9,8 @@ class Position;
 namespace Search {
 
 struct Stack {
-	Move *pv;
+	Move pv;
+	Value score;
 	int ply;
 	Move currentMove;
 	Move excludedMove;
@@ -30,6 +30,7 @@ struct RootMove {
 
 	Value score = -VALUE_INFINITE;
 	Value prevScore = -VALUE_INFINITE;
+	int selDepth;
 	Move pv;
 };
 
@@ -37,6 +38,7 @@ typedef std::vector<RootMove> RootMoves;
 
 extern TimePoint StartTime;
 
+uint64_t perft(Position &pos, Depth depth, bool root);
 void clear();
 
 } // namespace Search

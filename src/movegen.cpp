@@ -24,10 +24,15 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	return moveList;
 }
 
-MovePicker::MovePicker(const Position &p) : 
-	pos(p), 
-	cur(moves), 
-	endMoves(generate(pos, cur)) {
+MovePicker::MovePicker(const Position &p, const Move pv)
+	: pos(p)
+	, cur(moves)
+	, endMoves(generate(pos, cur)) {
+
+	if (pv != MOVE_NONE) {
+		*endMoves++ = { pv, VALUE_INFINITE, VALUE_INFINITE };
+		std::stable_sort(cur, endMoves);
+	}
 }
 
 Move MovePicker::next_move() {

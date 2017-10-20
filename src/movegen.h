@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "types.h"
+#include "search.h"
 
 class Position;
 
@@ -39,7 +40,7 @@ private:
 
 class MovePicker {
 public:
-	MovePicker(const Position &p);
+	MovePicker(const Position &p, const Move pv);
 	Move next_move();
 
 private:

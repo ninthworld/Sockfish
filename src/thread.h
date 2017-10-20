@@ -25,7 +25,8 @@ public:
 	void idle_loop();
 	void start_searching();
 	void wait_for_search_finished();
-	
+
+	int selDepth;
 	Position rootPos;
 	Search::RootMoves rootMoves;
 	Depth rootDepth, completedDepth;
@@ -48,6 +49,7 @@ struct ThreadPool : public std::vector<Thread*> {
 	void set(size_t requested);
 
 	MainThread* main() const { return static_cast<MainThread*>(front()); }
+	uint64_t nodes_searched() const { return accumulate(&Thread::nodes); }
 	Thread* best_thread() const { return static_cast<Thread*>(bestThread); }
 
 	std::atomic_bool stop;
@@ -55,6 +57,13 @@ struct ThreadPool : public std::vector<Thread*> {
 
 private:
 	StateListPtr setupStates;
+
+	uint64_t accumulate(std::atomic<uint64_t> Thread::* member) const {
+		uint64_t sum = 0;
+		for (Thread* th : *this)
+			sum += (th->*member).load(std::memory_order_relaxed);
+		return sum;
+	}
 };
 
 extern ThreadPool Threads;

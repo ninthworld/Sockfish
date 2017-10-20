@@ -1,11 +1,13 @@
-#include "movegen.h"
 #include "position.h"
 #include "search.h"
+#include "movegen.h"
 #include "thread.h"
 #include "timer.h"
 #include "cli.h"
 
 #include <iostream>
+
+using namespace Search;
 
 namespace Search {
 
@@ -15,9 +17,34 @@ TimePoint StartTime;
 
 namespace {
 
-Value search(Position &pos, Value alpha, Value beta, Depth depth, Depth maxDepth, int &nodeCount, int &leafCount);
+enum NodeType { PV, NonPV };
+
+template <NodeType PT>
+Value search(Position &pos, Stack *ss, Value alpha, Value beta, Depth depth);
 
 } // namespace
+
+uint64_t Search::perft(Position &pos, Depth depth, bool root) {
+	StateInfo st;
+	uint64_t cnt, nodes = 0;
+	const bool leaf = (depth == 2 * ONE_PLY);
+
+	for (const auto &m : MoveList(pos)) {
+		if (root && depth <= ONE_PLY)
+			cnt = 1, nodes++;
+		else {
+			pos.do_move(m, st);
+			cnt = (leaf ? MoveList(pos).size() : perft(pos, depth - ONE_PLY, false));
+			nodes += cnt;
+			pos.undo_move(m);
+		}
+		if (root)
+			std::cout << CLI::encode_move(m) << ": " << cnt << std::endl;
+	}
+
+	return nodes;
+}
+
 
 void Search::clear() {
 
@@ -63,29 +90,33 @@ void MainThread::search() {
 }
 
 void Thread::search() {
+	Stack stack[MAX_PLY + 7], *ss = stack + 4;
 	Value bestValue, alpha, beta;
 	MainThread *mainThread = (this == Threads.main() ? Threads.main() : nullptr);
-	
+
+	std::memset(ss - 4, 0, 32 * sizeof(Stack));
+
 	bestValue = alpha = -VALUE_INFINITE;
 	beta = VALUE_INFINITE;
 
 	// Iterative deepening
 	while ((rootDepth += ONE_PLY) < DEPTH_MAX && !Threads.stop) {
-
 		if (id && rootDepth / ONE_PLY < id)
 			continue;
 		
-		int nodeCount = 0, leafCount = 0;
-		bestValue = ::search(rootPos, alpha, beta, rootDepth, rootDepth, nodeCount, leafCount);
+		selDepth = 0;
 
-		if (mainThread) {
-			std::cout << "rootDepth=" << rootDepth << ", nodes=" << nodeCount << ", leaves=" << leafCount << ", bestValue=" << bestValue << std::endl;
-			if (bestValue == VALUE_WIN) {
-				std::cout << "Win in " << int((rootDepth-1)/2) << " moves" << std::endl;
-			}
-		}
+		bestValue = ::search<PV>(rootPos, ss, alpha, beta, rootDepth);
 
 		std::stable_sort(rootMoves.begin(), rootMoves.end());
+
+		if (mainThread)
+			CLI::printPV(rootPos, rootDepth, alpha, beta);
+
+		for (int i = 0; i < 16; ++i) {
+			Stack s = ss[i];
+			std::cout << "ss[" << i << "]: ply=" << s.ply << ", pv=" << CLI::encode_move(s.pv) << "(" << s.pv << ")" << ", score=" << s.score << std::endl;
+		}
 		
 		if (Threads.stop)
 			completedDepth = rootDepth;
@@ -97,49 +128,85 @@ void Thread::search() {
 
 namespace {
 
-Value search(Position &pos, Value alpha, Value beta, Depth depth, Depth maxDepth, int &nodeCount, int &leafCount) {
+template <NodeType PT>
+Value search(Position &pos, Stack *ss, Value alpha, Value beta, Depth depth) {
 
-	nodeCount++;
-
-	bool isRoot = (depth == maxDepth);
+	const bool PvNode = (PT == PV);
+	const bool rootNode = (PvNode && (ss - 1)->ply == 0);
 
 	StateInfo st;
-	Move move;
+	Move move, pvMove;
 	Value value, bestValue;
-	
+	int moveCount;
+
 	Thread *thisThread = pos.this_thread();
+	thisThread->nodes++;
 
 	bool isMaximizing = (pos.side_to_move() == pos.side_ai());
 	bestValue = (isMaximizing ? -VALUE_INFINITE : VALUE_INFINITE);
 
+	ss->ply = (ss - 1)->ply + 1;
+
+	if (thisThread == Threads.main() && Time.elapsed() > Time.maximum())
+		Threads.stop = true;
+
+	if (PvNode && thisThread->selDepth < ss->ply)
+		thisThread->selDepth = ss->ply;
+
+	if (!rootNode) {
+		if (Threads.stop.load(std::memory_order_relaxed) || ss->ply >= MAX_PLY || depth <= DEPTH_ZERO)
+			return pos.score();
+	}
+	
 	Color winColor;
-	if (pos.is_win(winColor)) {
-		leafCount++;
+	if (!rootNode && pos.is_win(winColor))
 		return (winColor == pos.side_ai() ? VALUE_WIN : VALUE_LOSE);
+
+	
+	pvMove = (PvNode ? ss->pv : MOVE_NONE);
+	MovePicker mp(pos, pvMove);
+
+	if (rootNode) {
+		CLI::printPosition(pos);
 	}
 
-	if (depth <= 0) {
-		leafCount++;
-		return pos.score();
-	}
-
-	MovePicker mp(pos);
-
+	moveCount = 0;
 	while ((move = mp.next_move()) != MOVE_NONE) {
-		if (!isRoot && Time.elapsed() > Time.maximum()) {
-			Threads.stop = true;
-			return bestValue;
-		}
 		
+		if (!pos.legal(move))
+			std::cout << "illegal: " << CLI::encode_move(move) << "(" << move << ")" << std::endl;
+
 		pos.do_move(move, st);
-		value = ::search(pos, alpha, beta, depth - ONE_PLY, maxDepth, nodeCount, leafCount);
+		if(PvNode && moveCount <= 0)
+			value = ::search<PV>(pos, ss + 1, alpha, beta, depth - ONE_PLY);
+		else
+			value = ::search<NonPV>(pos, ss + 1, alpha, beta, depth - ONE_PLY);
 		pos.undo_move(move);
+
+		++moveCount;		
 		
-		if (isRoot) {
-			Search::RootMove &rm = *std::find(thisThread->rootMoves.begin(), thisThread->rootMoves.end(), move);
+		/*if ((isMaximizing && value > ss->score) || (!isMaximizing && value < ss->score)) {
+			ss->pv = move;
+			ss->score = value;
+		}*/		
+		
+		if (PvNode && ((isMaximizing && value > bestValue) || (!isMaximizing && value < bestValue))) {
+			ss->pv = move;
+			std::memset(ss + 1, 0, (28 - ss->ply) * sizeof(Stack));
+		}
+
+		if (rootNode) {
+			std::cout << CLI::encode_move(move) << std::endl;
+			if (!std::count(thisThread->rootMoves.begin(), thisThread->rootMoves.end(), move)) {
+				std::cout << "NOT FOUND: " << CLI::encode_move(move) << "(" << move << ")" << std::endl;
+				std::cout << "ply=" << ss->ply << ", pv=" << CLI::encode_move(ss->pv) << "(" << move << ")" << ", score=" << ss->score << std::endl;
+			}
+
+			RootMove &rm = *std::find(thisThread->rootMoves.begin(), thisThread->rootMoves.end(), move);
 
 			rm.score = value;
 			rm.pv = move;
+			rm.selDepth = thisThread->selDepth;
 
 			bestValue = std::max(bestValue, value);
 		}
@@ -164,97 +231,19 @@ Value search(Position &pos, Value alpha, Value beta, Depth depth, Depth maxDepth
 
 } // namespace
 
-/*
-Move Search::best_move_1(Position &rootPos, TimePoint &start, Depth *maxDepth) {
-
-	Depth rootDepth = DEPTH_ZERO;
-	Value bestScore = -VALUE_INFINITE, score;
-	Move bestMove = MOVE_NONE, move;
-
-	StateInfo st;
-
-	// Iterative deepening loop
-	while ((rootDepth += ONE_PLY) < MAX_PLY) {
-		MovePicker mp(rootPos);
-
-		while((move = mp.next_move()) != MOVE_NONE){
-			if (max_time(start)) {
-				if (bestMove == MOVE_NONE) {
-					bestMove = move;
-				}
-
-				goto exitLoop;
-			}
-
-			rootPos.do_move(move, st);
-			score = ::search_1(rootPos, -VALUE_INFINITE, VALUE_INFINITE, rootDepth, start);
-			rootPos.undo_move(move);
-			
-			if (score > bestScore || bestMove == MOVE_NONE) {
-				bestScore = score;
-				bestMove = move;
-
-				if (bestScore == VALUE_INFINITE) {
-					goto exitLoop;
-				}
-			}
-		}
-	}
-
-exitLoop:
-
-	if(maxDepth != nullptr)
-		*maxDepth = rootDepth;
-
-	return bestMove;
+void CLI::printPV(Position &pos, Depth depth, Value alpha, Value beta) {
+	int elapsed = Time.elapsed() + 1;
+	const RootMoves &rootMoves = pos.this_thread()->rootMoves;
+	uint64_t nodesSearched = Threads.nodes_searched();
+	
+	std::cout
+		<< "depth "	<< depth / ONE_PLY
+		<< "\tseldepth " << rootMoves[0].selDepth
+		<< "\tscore "	<< rootMoves[0].score
+		<< (rootMoves[0].score >= beta ? "\tlb" : (rootMoves[0].score <= alpha ? "\tup" : "\t"))
+		<< "\tnodes "	<< nodesSearched
+		<< "\tnps "		<< nodesSearched * 1000 / elapsed
+		<< "\ttime "		<< elapsed
+		<< "\tpv "		<< CLI::encode_move(rootMoves[0].pv)
+		<< std::endl;
 }
-*/
-
-/*
-namespace {
-
-Value search_1(Position &pos, Value alpha, Value beta, Depth depth, TimePoint &start) {
-	if (depth == DEPTH_ZERO) {
-		return pos.score();
-	}
-
-	Color winner;
-	if (pos.is_win(winner)) {
-		return (pos.side_ai() == winner ? 1 : -1) * VALUE_INFINITE;
-	}
-
-	bool isMaximizing = (pos.side_to_move() == pos.side_ai());
-	Value bestValue = (isMaximizing ? -VALUE_INFINITE : VALUE_INFINITE), value;
-
-	StateInfo st;
-	MovePicker mp(pos);
-	Move move;
-
-	while ((move = mp.next_move()) != MOVE_NONE) {
-		if (max_time(start)) {
-			return bestValue;
-		}
-
-		pos.do_move(move, st);
-		value = ::search_1(pos, -VALUE_INFINITE, VALUE_INFINITE, depth - ONE_PLY, start);
-		pos.undo_move(move);
-
-		if (isMaximizing) {
-			bestValue = std::max(bestValue, value);
-			alpha = std::max(alpha, bestValue);
-			if (beta <= alpha)
-				break;
-		}
-		else {
-			bestValue = std::min(bestValue, value);
-			beta = std::min(beta, bestValue);
-			if (beta <= alpha)
-				break;
-		}
-	}
-
-	return bestValue;
-}
-
-} // namespace
-*/

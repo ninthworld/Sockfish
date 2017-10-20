@@ -2,6 +2,7 @@
 
 #include "search.h"
 #include "thread.h"
+#include "movegen.h"
 
 ThreadPool Threads;
 
