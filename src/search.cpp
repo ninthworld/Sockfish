@@ -113,11 +113,13 @@ void Thread::search() {
 		if (mainThread)
 			CLI::printPV(rootPos, rootDepth, alpha, beta);
 
+		/*
 		for (int i = 0; i < 16; ++i) {
 			Stack s = ss[i];
 			std::cout << "ss[" << i << "]: ply=" << s.ply << ", pv=" << CLI::encode_move(s.pv) << "(" << s.pv << ")" << ", score=" << s.score << std::endl;
 		}
-		
+		*/
+
 		if (Threads.stop)
 			completedDepth = rootDepth;
 
@@ -163,11 +165,12 @@ Value search(Position &pos, Stack *ss, Value alpha, Value beta, Depth depth) {
 		return (winColor == pos.side_ai() ? VALUE_WIN : VALUE_LOSE);
 
 	
-	pvMove = (PvNode ? ss->pv : MOVE_NONE);
+	//pvMove = (PvNode ? ss->pv : MOVE_NONE);
+	pvMove = MOVE_NONE;
 	MovePicker mp(pos, pvMove);
 
 	if (rootNode) {
-		CLI::printPosition(pos);
+		//CLI::printPosition(pos);
 	}
 
 	moveCount = 0;
@@ -191,12 +194,12 @@ Value search(Position &pos, Stack *ss, Value alpha, Value beta, Depth depth) {
 		}*/		
 		
 		if (PvNode && ((isMaximizing && value > bestValue) || (!isMaximizing && value < bestValue))) {
-			ss->pv = move;
-			std::memset(ss + 1, 0, (28 - ss->ply) * sizeof(Stack));
+			//ss->pv = move;
+			//std::memset(ss + 1, 0, (28 - ss->ply) * sizeof(Stack));
 		}
 
 		if (rootNode) {
-			std::cout << CLI::encode_move(move) << std::endl;
+			//std::cout << CLI::encode_move(move) << std::endl;
 			if (!std::count(thisThread->rootMoves.begin(), thisThread->rootMoves.end(), move)) {
 				std::cout << "NOT FOUND: " << CLI::encode_move(move) << "(" << move << ")" << std::endl;
 				std::cout << "ply=" << ss->ply << ", pv=" << CLI::encode_move(ss->pv) << "(" << move << ")" << ", score=" << ss->score << std::endl;
