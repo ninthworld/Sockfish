@@ -30,8 +30,11 @@ MovePicker::MovePicker(const Position &p, const Move pv)
 	, endMoves(generate(pos, cur)) {
 
 	if (pv != MOVE_NONE) {
-		*endMoves++ = { pv, VALUE_INFINITE, VALUE_INFINITE };
-		std::stable_sort(cur, endMoves);
+		ExtMove *m;
+		if ((m = std::find(cur, endMoves, pv))) {
+			m->score = VALUE_INFINITE;
+			std::stable_sort(cur, endMoves);
+		}
 	}
 }
 

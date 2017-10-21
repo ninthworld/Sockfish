@@ -113,12 +113,13 @@ void Thread::search() {
 		if (mainThread)
 			CLI::printPV(rootPos, rootDepth, alpha, beta);
 
-		/*
-		for (int i = 0; i < 16; ++i) {
-			Stack s = ss[i];
-			std::cout << "ss[" << i << "]: ply=" << s.ply << ", pv=" << CLI::encode_move(s.pv) << "(" << s.pv << ")" << ", score=" << s.score << std::endl;
+		std::cout << "ss: ";
+		Stack *ssP = ss;
+		while ((*ssP).pv != MOVE_NONE) {
+			std::cout << CLI::encode_move((*ssP).pv) << ", ";
+			ssP++;
 		}
-		*/
+		std::cout << std::endl;
 
 		if (Threads.stop)
 			completedDepth = rootDepth;
@@ -155,24 +156,18 @@ Value search(Position &pos, Stack *ss, Value alpha, Value beta, Depth depth) {
 	if (PvNode && thisThread->selDepth < ss->ply)
 		thisThread->selDepth = ss->ply;
 
-	if (!rootNode) {
-		if (Threads.stop.load(std::memory_order_relaxed) || ss->ply >= MAX_PLY || depth <= DEPTH_ZERO)
-			return pos.score();
-	}
+	if (!rootNode && (/*Threads.stop.load(std::memory_order_relaxed) || */ss->ply >= MAX_PLY || depth <= DEPTH_ZERO))
+		return pos.score();
 	
 	Color winColor;
 	if (!rootNode && pos.is_win(winColor))
 		return (winColor == pos.side_ai() ? VALUE_WIN : VALUE_LOSE);
 
 	
-	//pvMove = (PvNode ? ss->pv : MOVE_NONE);
-	pvMove = MOVE_NONE;
+	pvMove = (PvNode ? ss->pv : MOVE_NONE);
+	//pvMove = MOVE_NONE;
 	MovePicker mp(pos, pvMove);
-
-	if (rootNode) {
-		//CLI::printPosition(pos);
-	}
-
+	
 	moveCount = 0;
 	while ((move = mp.next_move()) != MOVE_NONE) {
 		
@@ -180,21 +175,23 @@ Value search(Position &pos, Stack *ss, Value alpha, Value beta, Depth depth) {
 			std::cout << "illegal: " << CLI::encode_move(move) << "(" << move << ")" << std::endl;
 
 		pos.do_move(move, st);
+
 		if(PvNode && moveCount <= 0)
 			value = ::search<PV>(pos, ss + 1, alpha, beta, depth - ONE_PLY);
 		else
 			value = ::search<NonPV>(pos, ss + 1, alpha, beta, depth - ONE_PLY);
+		
 		pos.undo_move(move);
 
-		++moveCount;		
+		++moveCount;
 		
 		/*if ((isMaximizing && value > ss->score) || (!isMaximizing && value < ss->score)) {
 			ss->pv = move;
 			ss->score = value;
-		}*/		
+		}*/	
 		
 		if (PvNode && ((isMaximizing && value > bestValue) || (!isMaximizing && value < bestValue))) {
-			//ss->pv = move;
+			ss->pv = move;
 			//std::memset(ss + 1, 0, (28 - ss->ply) * sizeof(Stack));
 		}
 
