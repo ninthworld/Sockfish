@@ -9,11 +9,14 @@ class Position;
 
 namespace CLI {
 
-void init();
+extern bool Debug;
+extern std::vector<Move> MoveHistory;
+
+inline void init(bool showDebug) { CLI::Debug = showDebug; }
 void loop();
 void printPosition(Position &pos);
 void printBitboard(Bitboard bb);
-void printPV(Position &pos, Depth depth, Value alpha, Value beta);
+void printPV(Position &pos, Depth depth);
 bool promptYesNo(std::string str);
 
 std::string encode_square(Square s);

@@ -12,7 +12,7 @@ void initMagicBBs();
 } // namespace Bitboards
 
 const Bitboard AllSquares = ~Bitboard(0);
-const Bitboard DarkSquares = 0x55AA55AA55AA55ULL;
+//const Bitboard DarkSquares = 0x55AA55AA55AA55ULL;
 const Bitboard RangeSquares = 0xFFFFFFFFFFFFFFULL;
 
 const Bitboard FileABB = 0xFF;
@@ -129,7 +129,6 @@ inline Bitboard shift(Bitboard b) {
 
 template<typename T> inline int distance(T x, T y) { return x < y ? y - x : x - y; }
 template<> inline int distance<Square>(Square x, Square y) { return SquareDistance[x][y]; }
-
 template<typename T1, typename T2> inline int distance(T2 x, T2 y);
 template<> inline int distance<File>(Square x, Square y) { return distance(file_of(x), file_of(y)); }
 template<> inline int distance<Rank>(Square x, Square y) { return distance(rank_of(x), rank_of(y)); }
@@ -192,7 +191,6 @@ inline Square pop_lsb(Bitboard* b) {
 	*b &= *b - 1;
 	return s;
 }
-
 
 class PRNG {
 	uint64_t s;

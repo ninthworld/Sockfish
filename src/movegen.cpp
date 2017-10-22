@@ -1,8 +1,6 @@
 #include "movegen.h"
 #include "position.h"
 
-#include "cli.h"
-
 namespace {
 
 } // namespace

@@ -9,10 +9,9 @@ typedef uint64_t Key;
 typedef uint64_t Bitboard;
 typedef std::chrono::milliseconds::rep TimePoint;
 
-const TimePoint MAX_TIME = 4990; // 4.99 seconds
+const TimePoint MAX_TIME = 4900; // 4.9 seconds
 const int MAX_MOVES = 256;
 const int MAX_PLY = 128;
-const int MAX_THREADS = 1; // 4;
 
 inline TimePoint now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>
@@ -32,6 +31,13 @@ enum Color {
 	WHITE, RED, COLOR_NB = 2
 };
 
+enum Bound {
+	BOUND_NONE,
+	BOUND_UPPER,
+	BOUND_LOWER,
+	BOUND_EXACT = BOUND_UPPER | BOUND_LOWER
+};
+
 enum Value : int {
 	VALUE_ZERO = 0,
 	VALUE_INFINITE = 32001,
@@ -40,10 +46,15 @@ enum Value : int {
 	VALUE_WIN = 32000,
 	VALUE_LOSE = -32000,
 
-	MiniNinjaValue = 140,
-	MiniSamuraiValue = 100,
-	NinjaValue = 540,
-	SamuraiValue = 500
+	MiniNinjaValue = 100,
+	MiniSamuraiValue = 80,
+	NinjaValue = 800,
+	SamuraiValue = 500,
+
+	MiniNinjaModifier = 2,
+	MiniSamuraiModifier = 2,
+	NinjaModifier = 2,
+	SamuraiModifier = 2
 };
 
 enum PieceType {
@@ -111,6 +122,7 @@ inline T& operator-=(T& d1, T d2) { return d1 = d1 - d2; }
 ENABLE_BASE_OPERATORS_ON(T)                                     \
 inline T operator*(int i, T d) { return T(i * int(d)); }        \
 inline T operator*(T d, int i) { return T(int(d) * i); }        \
+inline T operator*(T d, T i) { return T(int(d) * int(i)); }        \
 inline T& operator++(T& d) { return d = T(int(d) + 1); }        \
 inline T& operator--(T& d) { return d = T(int(d) - 1); }        \
 inline T operator/(T d, int i) { return T(int(d) / i); }        \
@@ -208,10 +220,10 @@ namespace ValueMap {
 
 const int Modifier[PIECE_TYPE_NB] = {
 	0,
-	2 * MiniNinjaValue / 10,
-	2 * MiniSamuraiValue / 10,
-	2 * NinjaValue / 10,
-	2 * SamuraiValue / 10
+	MiniNinjaModifier * MiniNinjaValue / 10,
+	MiniSamuraiModifier * MiniSamuraiValue / 10,
+	NinjaModifier * NinjaValue / 10,
+	SamuraiModifier * SamuraiValue / 10
 };
 extern int Values[PIECE_NB][SQUARE_NB];
 

@@ -2,12 +2,24 @@
 #include "position.h"
 #include "thread.h"
 
+namespace Zobrist {
+
+Key psq[PIECE_NB][SQUARE_NB];
+Key side;
+
+} // namespace Zobrist
+
 void Position::init() {
-	// Zobrist Key
-}
+	
+	PRNG rng(1070372);
 
-Position::Position() {
+	for (Piece pc : {NO_PIECE, W_MINI_NINJA, W_MINI_SAMURAI, W_NINJA, W_SAMURAI, W_KING, R_MINI_NINJA, R_MINI_SAMURAI, R_NINJA, R_SAMURAI, R_KING}) {
+		for (Square s = SQ_A1; s <= SQ_G8; ++s) {
+			Zobrist::psq[pc][s] = rng.rand<Key>();
+		}
+	}
 
+	Zobrist::side = rng.rand<Key>();
 }
 
 void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th) {
@@ -16,6 +28,7 @@ void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th
 	for(Piece p = W_MINI_NINJA; p <= R_KING; ++p)
 		for (int i = 0; i < 8; ++i)
 			pieceList[p][i] = SQ_NONE;
+	
 	
 	put_piece(W_MINI_NINJA, SQ_A3);		put_piece(W_MINI_NINJA, SQ_B3);		put_piece(W_MINI_NINJA, SQ_C3);
 	put_piece(W_MINI_SAMURAI, SQ_E3);	put_piece(W_MINI_SAMURAI, SQ_F3);	put_piece(W_MINI_SAMURAI, SQ_G3);
@@ -29,6 +42,20 @@ void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th
 	put_piece(R_SAMURAI, SQ_E7);		put_piece(R_SAMURAI, SQ_F7);		put_piece(R_SAMURAI, SQ_G7);
 	put_piece(R_KING, SQ_D8);
 	
+	/* SOLVED: RED LOSS PLY 8
+	put_piece(W_KING, SQ_D1);
+	put_piece(W_MINI_SAMURAI, SQ_E5);
+	put_piece(W_MINI_NINJA, SQ_A4); put_piece(W_MINI_NINJA, SQ_B4); put_piece(W_MINI_NINJA, SQ_E3); put_piece(W_MINI_NINJA, SQ_G2);
+	put_piece(W_NINJA, SQ_E2);
+	put_piece(W_SAMURAI, SQ_A2);		put_piece(W_SAMURAI, SQ_B2);		put_piece(W_SAMURAI, SQ_C2);
+
+	put_piece(R_KING, SQ_D8); 
+	put_piece(R_MINI_SAMURAI, SQ_A6); put_piece(R_MINI_SAMURAI, SQ_C5); put_piece(R_MINI_SAMURAI, SQ_E6); put_piece(R_MINI_SAMURAI, SQ_F6);
+	put_piece(R_MINI_NINJA, SQ_E4); put_piece(R_MINI_NINJA, SQ_G3); put_piece(R_MINI_NINJA, SQ_G5); put_piece(R_MINI_NINJA, SQ_G6);
+	put_piece(R_NINJA, SQ_A7);
+	put_piece(R_SAMURAI, SQ_G7);
+	*/
+
 	/*
 	// TEST CASE
 	put_piece(W_MINI_SAMURAI, SQ_E3);	put_piece(W_MINI_SAMURAI, SQ_F3);	put_piece(W_MINI_SAMURAI, SQ_G3);
@@ -43,23 +70,37 @@ void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th
 	put_piece(R_KING, SQ_D8);
 	*/
 
+	/*put_piece(W_MINI_SAMURAI, SQ_G3);
+	put_piece(W_MINI_NINJA, SQ_D4);			put_piece(W_MINI_NINJA, SQ_A3);
+	put_piece(W_NINJA, SQ_G2);				put_piece(W_NINJA, SQ_F2);				put_piece(W_NINJA, SQ_F3);
+	put_piece(W_SAMURAI, SQ_A2);			put_piece(W_SAMURAI, SQ_A4);			put_piece(W_SAMURAI, SQ_B6);
+	put_piece(W_KING, SQ_D1);
+
+
+	put_piece(R_MINI_SAMURAI, SQ_C6);
+	put_piece(R_MINI_NINJA, SQ_B7); put_piece(R_MINI_NINJA, SQ_C5); put_piece(R_MINI_NINJA, SQ_E5); put_piece(R_MINI_NINJA, SQ_E6); put_piece(R_MINI_NINJA, SQ_G6);
+	put_piece(R_SAMURAI, SQ_E7);		put_piece(R_SAMURAI, SQ_F7);		put_piece(R_SAMURAI, SQ_G7);
+	put_piece(R_KING, SQ_D8);*/
+	
+
 	sideToMove	= moveFirst;
 	gamePly		= 0;
-	sideAi = ai;
 
 	st = si;
 	thisThread = th;
 }
 
 void Position::set(Position &pos, StateInfo *si, Thread *th) {
+
 	std::memcpy(&(th->rootPos), &pos, sizeof(Position));
 	st = si;
 	thisThread = th;
-
 }
 
 void Position::do_move(Move m, StateInfo &newSt) {
 	
+	Key k = st->key ^ Zobrist::side;
+
 	newSt.previous = st;
 	st = &newSt;
 
@@ -72,6 +113,8 @@ void Position::do_move(Move m, StateInfo &newSt) {
 	Piece pc = piece_on(from);
 
 	move_piece(pc, from, to);
+
+	k ^= Zobrist::psq[pc][from] ^ Zobrist::psq[pc][to];
 	
 	Rank attackRank = rank_of(to) + (Rank)(c == WHITE ? 1 : -1);
 	if (attackRank > Rank8BB)
@@ -83,12 +126,20 @@ void Position::do_move(Move m, StateInfo &newSt) {
 		if (color_of(attackPc) == nC) {
 			remove_piece(attackPc, attackSquare);
 
+			k ^= Zobrist::psq[attackPc][attackSquare] ^ Zobrist::psq[NO_PIECE][attackSquare];
+
 			PieceType attackPt = type_of(attackPc);
 			if (attackPt == NINJA) {
-				put_piece(make_piece(nC, MINI_NINJA), attackSquare);
+				Piece newPiece = make_piece(nC, MINI_NINJA);
+				put_piece(newPiece, attackSquare);
+
+				k ^= Zobrist::psq[attackPc][attackSquare] ^ Zobrist::psq[newPiece][attackSquare];
 			}
 			else if (attackPt == SAMURAI) {
-				put_piece(make_piece(nC, MINI_SAMURAI), attackSquare);
+				Piece newPiece = make_piece(nC, MINI_SAMURAI);
+				put_piece(newPiece, attackSquare);
+
+				k ^= Zobrist::psq[attackPc][attackSquare] ^ Zobrist::psq[newPiece][attackSquare];
 			}
 		}
 		else {
@@ -96,9 +147,11 @@ void Position::do_move(Move m, StateInfo &newSt) {
 		}
 	}
 
-	newSt.attackedPiece = attackPc;
+	st->attackedPiece = attackPc;
 
 	sideToMove = nC;
+
+	st->key = k;
 }
 
 void Position::undo_move(Move m) {

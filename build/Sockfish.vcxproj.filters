@@ -36,10 +36,10 @@
     <ClCompile Include="..\src\thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\timer.cpp">
+    <ClCompile Include="..\src\types.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\types.cpp">
+    <ClCompile Include="..\src\tt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,7 +65,7 @@
     <ClInclude Include="..\src\thread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\timer.h">
+    <ClInclude Include="..\src\tt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

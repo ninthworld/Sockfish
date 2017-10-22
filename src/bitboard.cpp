@@ -18,6 +18,7 @@ Magic SamuraiMagics[SQUARE_NB];
 namespace {
 
 const uint64_t DeBruijn64 = 0x3F79D71B4CB0A89ULL;
+int MSBTable[256];
 Square BSFTable[64];
 
 Bitboard NinjaTable[0x1480];
@@ -43,6 +44,31 @@ Square lsb(Bitboard b) {
 	return BSFTable[bsf_index(b)];
 }
 
+Square msb(Bitboard b) {
+
+	unsigned b32;
+	int result = 0;
+
+	if (b > 0xFFFFFFFF) {
+		b >>= 32;
+		result = 32;
+	}
+
+	b32 = unsigned(b);
+
+	if (b32 > 0xFFFF) {
+		b32 >>= 16;
+		result += 16;
+	}
+
+	if (b32 > 0xFF) {
+		b32 >>= 8;
+		result += 8;
+	}
+
+	return Square(result + MSBTable[b32]);
+}
+
 void Bitboards::initBBs() {
 
 	for (unsigned i = 0; i < (1 << 16); ++i)
@@ -52,6 +78,9 @@ void Bitboards::initBBs() {
 		SquareBB[s] = 1ULL << s;
 		BSFTable[bsf_index(SquareBB[s])] = s;
 	}
+
+	for (Bitboard b = 2; b < 256; ++b)
+		MSBTable[b] = MSBTable[b - 1] + !more_than_one(b);
 
 	for (File f = FILE_A; f <= FILE_G; ++f)
 		FileBB[f] = f > FILE_A ? FileBB[f - 1] << 8 : FileABB;

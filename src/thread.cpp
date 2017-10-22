@@ -18,7 +18,6 @@ Thread::~Thread() {
 }
 
 void Thread::clear() {
-	// History clearing
 }
 
 void Thread::start_searching() {

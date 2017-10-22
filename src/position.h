@@ -7,6 +7,7 @@
 #include "types.h"
 
 struct StateInfo {
+	Key key;
 	Piece attackedPiece;
 	StateInfo *previous;
 };
@@ -18,8 +19,6 @@ class Thread;
 class Position {
 public:
 	static void init();
-
-	Position();
 
 	void set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th);
 	void set(Position &pos, StateInfo *si, Thread *th);
@@ -36,6 +35,7 @@ public:
 	bool legal(Move m) const;
 	bool is_win(Color &winner) const;
 	Value score() const;
+	Key key() const;
 
 	void do_move(Move m, StateInfo &newSt);
 	void undo_move(Move m);
@@ -43,7 +43,6 @@ public:
 	Color side_to_move() const;
 	int game_ply() const;
 
-	Color side_ai() const;
 	Thread* this_thread() const;
 
 private:
@@ -62,8 +61,6 @@ private:
 	Color sideToMove;
 	StateInfo *st;
 	Thread* thisThread;
-
-	Color sideAi;
 
 }; // class Position
 
@@ -114,25 +111,24 @@ inline bool Position::is_win(Color &winner) const {
 		return true;
 	}
 
-	for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
-		const Square *pl = squares(WHITE, pt);
-		for (Square from = *pl; from != SQ_NONE; from = *++pl) {
-			if (moves(from)) goto checkRed;
+	if (sideToMove == WHITE) {
+		for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
+			const Square *pl = squares(WHITE, pt);
+			for (Square from = *pl; from != SQ_NONE; from = *++pl) {
+				if (moves(from)) return false;
+			}
+		}
+	}
+	else {
+		for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
+			const Square *pl = squares(RED, pt);
+			for (Square from = *pl; from != SQ_NONE; from = *++pl) {
+				if (moves(from)) return false;
+			}
 		}
 	}
 
-	winner = RED;
-	return true;
-
-checkRed:
-	for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
-		const Square *pl = squares(RED, pt);
-		for (Square from = *pl; from != SQ_NONE; from = *++pl) {
-			if (moves(from)) return false;
-		}
-	}
-
-	winner = WHITE;
+	winner = ~sideToMove;
 	return true;
 }
 
@@ -154,9 +150,12 @@ inline Value Position::score() const {
 		}
 	}
 
-	return (sideAi == RED ? -score : score);
+	return score;
 }
 
+inline Key Position::key() const {
+	return st->key;
+}
 
 inline Color Position::side_to_move() const {
 	return sideToMove;
@@ -164,10 +163,6 @@ inline Color Position::side_to_move() const {
 
 inline int Position::game_ply() const {
 	return gamePly;
-}
-
-inline Color Position::side_ai() const {
-	return sideAi;
 }
 
 inline Thread* Position::this_thread() const {
