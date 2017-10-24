@@ -12,7 +12,7 @@
 int main(int argc, char *argv[]) {
 	
 	bool showDebug = false;
-	int threadCount = 1;
+	int threadCount = 8;
 	int ttSizeMB = 16;
 
 	std::string token;
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	std::cout << "Sockfish - v2.0\n" << std::endl;
+	std::cout << "Sockfish - v2.1\n" << std::endl;
 
 	ValueMap::init();
 

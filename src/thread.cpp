@@ -84,6 +84,8 @@ void ThreadPool::start_thinking(Position &pos, StateListPtr &states, const TimeP
 
 	for (Thread *th : Threads) {
 		th->nodes = 0;
+		th->ttHits = 0;
+		th->ttSaves = 0;
 		th->rootDepth = th->completedDepth = DEPTH_ZERO;
 		th->rootMoves = rootMoves;
 		th->rootPos.set(pos, &setupStates->back(), th);

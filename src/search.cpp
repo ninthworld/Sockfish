@@ -13,11 +13,13 @@ namespace Search {
 
 TimePoint StartTime;
 
+SearchInfo *SearchData;
+
 } // namespace Search
 
 namespace {
 
-Value negamax(Position &pos, Depth depth, Value alpha, Value beta, int color);
+Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss);
 
 } // namespace
 
@@ -35,6 +37,9 @@ void Search::clear() {
 }
 
 void MainThread::search() {
+
+	SearchData = new SearchInfo();
+	std::memset(SearchData, 0, sizeof(SearchInfo));
 
 	TT.new_search();
 
@@ -61,12 +66,18 @@ void MainThread::search() {
 
 	prevScore = bestThread->rootMoves[0].score;
 	Threads.bestThread = bestThread;
+
+	delete SearchData;
 }
 
 void Thread::search() {
 	MainThread *mainThread = (this == Threads.main() ? Threads.main() : nullptr);
 
+	Stack stack[MAX_PLY + 7], *ss = stack + 4;
+	std::memset(ss - 4, 0, 7 * sizeof(Stack));
+
 	Depth rootDepth = DEPTH_ZERO;
+	Value value;
 
 	while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
 		if (id && rootDepth / ONE_PLY < id)
@@ -77,9 +88,18 @@ void Thread::search() {
 
 			rootPos.do_move(rootMove.pv, st);
 
-			rootMove.score = -negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, 1);
+			ss->currentMove = rootMove.pv;
+			value = -negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
 
 			rootPos.undo_move(rootMove.pv);
+
+			if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
+				rootMove.score = rootMove.prevScore;
+			}
+			else {
+				rootMove.prevScore = rootMove.score;
+				rootMove.score = value;
+			}
 		}
 
 		std::stable_sort(rootMoves.begin(), rootMoves.end());
@@ -97,7 +117,7 @@ void Thread::search() {
 
 namespace {
 
-Value negamax(Position &pos, Depth depth, Value alpha, Value beta, int color) {
+Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 	StateInfo st;
 	Move move;
@@ -106,6 +126,11 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, int color) {
 
 	Thread *thisThread = pos.this_thread();
 	thisThread->nodes++;
+
+	ss->ply = (ss - 1)->ply + 1;
+	(ss + 2)->killers[0] = (ss + 2)->killers[1] = MOVE_NONE;
+
+	int color = (ss->ply % 2 ? 1 : -1);
 
 	if (thisThread == Threads.main() && max_time(StartTime))
 		Threads.stop = true;
@@ -126,6 +151,8 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, int color) {
 
 	Value alphaOrig = alpha;
 	if (ttHit && ttDepth >= depth && ttValue != VALUE_NONE) {
+		thisThread->ttHits++;
+
 		if (ttBound == BOUND_EXACT)
 			return ttValue;
 		else if (ttBound == BOUND_LOWER)
@@ -136,22 +163,37 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, int color) {
 			return ttValue;
 	}
 
-	MovePicker mp(pos, ttMove);
+	MovePicker mp(pos, ss->currentMove, ttMove, ss->killers);
 	while ((move = mp.next_move()) != MOVE_NONE) {
 		pos.do_move(move, st);
-		value = -negamax(pos, depth - ONE_PLY, -beta, -alpha, -color);
+		(ss + 1)->currentMove = move;
+		value = -negamax(pos, depth - ONE_PLY, -beta, -alpha, ss + 1);
 		pos.undo_move(move);
 
 		if (Threads.stop.load(std::memory_order_relaxed))
 			return VALUE_ZERO;
 
+		if (value > bestValue)
+			ttMove = move;
+
+		// SearchData->history[pos.side_to_move()][move] = value;
+
 		bestValue = std::max(bestValue, value);
 		alpha = std::max(alpha, value);
-		if (alpha >= beta)
+		if (alpha >= beta) {
+			SearchData->countermove[ss->currentMove] = move;
+			SearchData->history[pos.side_to_move()][move] = Value(depth * depth);
 			break;
+		}
 	}
 
-	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, MOVE_NONE, VALUE_NONE, TT.generation());
+	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
+	thisThread->ttSaves++;
+
+	if (ss->killers[0] != move) {
+		ss->killers[1] = ss->killers[0];
+		ss->killers[0] = move;
+	}
 
 	return bestValue;
 }
@@ -164,11 +206,22 @@ void CLI::printPV(Position &pos, Depth depth) {
 	const RootMoves &rootMoves = pos.this_thread()->rootMoves;
 	uint64_t nodesSearched = Threads.nodes_searched();
 
-	std::printf("depth %2d | score %6d | nodes %10I64d | nps %10I64d | time %6dms | pv %s\n", 
+	uint64_t ttHits = 0;
+	uint64_t ttSaves = 0;
+
+	for (Thread *thread : Threads) {
+		ttHits += thread->ttHits;
+		ttSaves += thread->ttSaves;
+	}
+
+	std::printf("depth %2d | score %6d | nodes %10I64d | nps %10I64d | time %6dms | pv %s | hits %8I64d | saves %8I64d\n", 
 		depth, 
 		rootMoves[0].score, 
 		nodesSearched, 
 		nodesSearched * 1000 / elapsed,
 		elapsed, 
-		CLI::encode_move(rootMoves[0].pv).c_str());
+		CLI::encode_move(rootMoves[0].pv).c_str(),
+		ttHits,
+		ttSaves
+	);
 }

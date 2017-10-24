@@ -46,15 +46,15 @@ enum Value : int {
 	VALUE_WIN = 32000,
 	VALUE_LOSE = -32000,
 
-	MiniNinjaValue = 100,
-	MiniSamuraiValue = 80,
-	NinjaValue = 800,
-	SamuraiValue = 500,
+	MiniNinjaValue			= 100,
+	MiniSamuraiValue		= 80,
+	NinjaValue				= 800,
+	SamuraiValue			= 640,
 
-	MiniNinjaModifier = 2,
-	MiniSamuraiModifier = 2,
-	NinjaModifier = 2,
-	SamuraiModifier = 2
+	MiniNinjaModifier		= 2,
+	MiniSamuraiModifier		= 2,
+	NinjaModifier			= 2,
+	SamuraiModifier			= 2
 };
 
 enum PieceType {

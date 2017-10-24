@@ -1,5 +1,8 @@
 #include "movegen.h"
 #include "position.h"
+#include "search.h"
+
+#include <iostream>
 
 namespace {
 
@@ -22,18 +25,37 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	return moveList;
 }
 
-MovePicker::MovePicker(const Position &p, const Move pv)
+MovePicker::MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[])
 	: pos(p)
 	, cur(moves)
 	, endMoves(generate(pos, cur)) {
 
-	if (pv != MOVE_NONE) {
+	if (Search::SearchData != nullptr) {
+		ExtMove *c = cur;
+		do {
+			c->score = Search::SearchData->history[p.side_to_move()][c->move];
+			if (Search::SearchData->countermove[currentMove] == c->move)
+				c->score = Value(10000);
+		} while (++c < endMoves);
+	}
+
+	if (ttMove != MOVE_NONE) {
 		ExtMove *m;
-		if ((m = std::find(cur, endMoves, pv))) {
+		if ((m = std::find(cur, endMoves, ttMove))) {
 			m->score = VALUE_INFINITE;
-			std::stable_sort(cur, endMoves);
 		}
 	}
+
+	for (int i = 0; i < 2; i++) {
+		if (killers[i] != MOVE_NONE) {
+			ExtMove *m;
+			if ((m = std::find(cur, endMoves, killers[i]))) {
+				m->score = VALUE_INFINITE - i - 1;
+			}
+		}
+	}
+
+	std::stable_sort(cur, endMoves);
 }
 
 Move MovePicker::next_move() {

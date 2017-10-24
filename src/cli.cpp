@@ -8,6 +8,7 @@
 #include "cli.h"
 #include "movegen.h"
 #include "search.h"
+#include "tt.h"
 
 namespace CLI {
 
@@ -41,6 +42,7 @@ void CLI::loop() {
 			std::cout << "Computer thinking...\n" << std::endl;
 
 			TimePoint startTime = now();
+			TT.new_search();
 			Threads.start_thinking(pos, states, startTime);
 			Threads.main()->wait_for_search_finished();
 

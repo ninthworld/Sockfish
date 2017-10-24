@@ -31,6 +31,8 @@ public:
 	Search::RootMoves rootMoves;
 	Depth rootDepth, completedDepth;
 	std::atomic<uint64_t> nodes;
+	std::atomic<uint64_t> ttHits;
+	std::atomic<uint64_t> ttSaves;
 };
 
 struct MainThread : public Thread {
@@ -45,7 +47,7 @@ struct ThreadPool : public std::vector<Thread*> {
 	
 	void init(size_t requested);
 	void exit();
-	void start_thinking(Position &pos, StateListPtr& states, const TimePoint &st);
+	void start_thinking(Position &pos, StateListPtr &states, const TimePoint &st);
 	void set(size_t requested);
 
 	MainThread* main() const { return static_cast<MainThread*>(front()); }

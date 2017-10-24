@@ -40,7 +40,7 @@ private:
 
 class MovePicker {
 public:
-	MovePicker(const Position &p, const Move pv);
+	MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[]);
 	Move next_move();
 
 private:
