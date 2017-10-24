@@ -11,7 +11,7 @@
 
 int main(int argc, char *argv[]) {
 	
-	bool showDebug = false;
+	bool showDebug = true;
 	bool ponderEnabled = false;
 	int threadCount = 4;
 	int ttSizeMB = 32;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "Done\n";
 
 	std::cout << "Show Debug : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
-	std::cout << "Pondering  : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
+	std::cout << "Pondering  : " << (ponderEnabled ? "ENABLED" : "DISABLED") << std::endl;
 
 	Search::clear();
 

@@ -141,16 +141,17 @@ void Thread::search() {
 
 				rootPos.undo_move(rootMove.pv);
 
+				/*
 				if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
 					rootMove.score = rootMove.prevScore;
 				}
 				else {
 					rootMove.prevScore = rootMove.score;
 					rootMove.score = value;
-				}
+				}*/
 			}
 
-			std::stable_sort(rootMoves.begin(), rootMoves.end());
+			//std::stable_sort(rootMoves.begin(), rootMoves.end());
 
 			//if (mainThread && CLI::Debug)
 			//	CLI::printPV(rootPos, rootDepth);
@@ -234,8 +235,10 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		}
 	}
 
-	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
-	thisThread->ttSaves++;
+	//if (Threads.pondering) {
+		tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
+		thisThread->ttSaves++;
+	//}
 
 	if (ss->killers[0] != move) {
 		ss->killers[1] = ss->killers[0];
