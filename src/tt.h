@@ -51,7 +51,7 @@ class TranspositionTable {
 
 public:
 	~TranspositionTable() { free(mem); }
-	void new_search() { generation8 += 4; }
+	void new_search() { generation8 += 4; is_empty = false; }
 	uint8_t generation() const { return generation8; }
 	TTEntry *probe(const Key key, bool &found) const;
 	int hashfull() const;
@@ -62,6 +62,7 @@ public:
 		return &table[(size_t)key & (clusterCount - 1)].entry[0];
 	}
 
+	bool is_empty = true;
 private:
 	size_t clusterCount;
 	Cluster *table;

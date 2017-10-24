@@ -12,8 +12,9 @@
 int main(int argc, char *argv[]) {
 	
 	bool showDebug = false;
-	int threadCount = 8;
-	int ttSizeMB = 16;
+	bool ponderEnabled = false;
+	int threadCount = 4;
+	int ttSizeMB = 32;
 
 	std::string token;
 	int num;
@@ -22,6 +23,9 @@ int main(int argc, char *argv[]) {
 
 		if (token == "-d") {
 			showDebug = true;
+		}
+		else if (token == "-p") {
+			ponderEnabled = true;
 		}
 		else if (token == "-t") {
 			if (i + 1 < argc) {
@@ -39,12 +43,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	std::cout << "Sockfish - v2.1\n" << std::endl;
+	std::cout << "Sockfish - v2.2\n" << std::endl;
 
 	ValueMap::init();
 
 	std::cout << "Initializing Interface......... ";
-	CLI::init(showDebug);
+	CLI::init(showDebug, ponderEnabled);
 	std::cout << "Done\n";
 
 	std::cout << "Initializing Bitboards......... ";
@@ -66,6 +70,9 @@ int main(int argc, char *argv[]) {
 	std::printf( "Initializing %2d Threads........ ", threadCount);
 	Threads.init(threadCount);
 	std::cout << "Done\n";
+
+	std::cout << "Show Debug : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
+	std::cout << "Pondering  : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
 
 	Search::clear();
 

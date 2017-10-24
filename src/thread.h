@@ -47,13 +47,14 @@ struct ThreadPool : public std::vector<Thread*> {
 	
 	void init(size_t requested);
 	void exit();
-	void start_thinking(Position &pos, StateListPtr &states, const TimePoint &st);
+	void start_thinking(Position &pos, StateListPtr &states, const TimePoint &st, const bool ponder);
 	void set(size_t requested);
 
 	MainThread* main() const { return static_cast<MainThread*>(front()); }
 	uint64_t nodes_searched() const { return accumulate(&Thread::nodes); }
 	Thread* best_thread() const { return static_cast<Thread*>(bestThread); }
 
+	bool pondering = false;
 	std::atomic_bool stop;
 	Thread *bestThread;
 

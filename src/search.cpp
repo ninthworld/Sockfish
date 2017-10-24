@@ -27,7 +27,8 @@ void Search::clear() {
 
 	Threads.main()->wait_for_search_finished();
 	
-	TT.clear();
+	if(!Threads.pondering)
+		TT.clear();
 
 	for (Thread *th : Threads)
 		th->clear();
@@ -41,7 +42,8 @@ void MainThread::search() {
 	SearchData = new SearchInfo();
 	std::memset(SearchData, 0, sizeof(SearchInfo));
 
-	TT.new_search();
+	if(Threads.pondering || TT.is_empty)
+		TT.new_search();
 
 	for (Thread *th : Threads)
 		if (th != this)
@@ -79,39 +81,86 @@ void Thread::search() {
 	Depth rootDepth = DEPTH_ZERO;
 	Value value;
 
-	while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
-		if (id && rootDepth / ONE_PLY < id)
-			continue;
+	if (!Threads.pondering) {
+		while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
+			if (id && rootDepth / ONE_PLY < id)
+				continue;
 
-		StateInfo st;
-		for (RootMove &rootMove : rootMoves) {
+			StateInfo st;
+			for (RootMove &rootMove : rootMoves) {
 
-			rootPos.do_move(rootMove.pv, st);
+				rootPos.do_move(rootMove.pv, st);
 
-			ss->currentMove = rootMove.pv;
-			value = -negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
+				ss->currentMove = rootMove.pv;
+				value = -negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
 
-			rootPos.undo_move(rootMove.pv);
+				rootPos.undo_move(rootMove.pv);
 
-			if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
-				rootMove.score = rootMove.prevScore;
+				if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
+					rootMove.score = rootMove.prevScore;
+				}
+				else {
+					rootMove.prevScore = rootMove.score;
+					rootMove.score = value;
+				}
 			}
-			else {
-				rootMove.prevScore = rootMove.score;
-				rootMove.score = value;
-			}
+
+			std::stable_sort(rootMoves.begin(), rootMoves.end());
+
+			if (mainThread && CLI::Debug)
+				CLI::printPV(rootPos, rootDepth);
+
+			if (rootMoves[0].score >= VALUE_WIN)
+				Threads.stop = true;
+
+			if (Threads.stop)
+				completedDepth = rootDepth;
 		}
+	}
+	else {
+		Move move;
+		while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
+			if (id && rootDepth / ONE_PLY < id)
+				continue;
 
-		std::stable_sort(rootMoves.begin(), rootMoves.end());
+			StateInfo st;
+			for (RootMove &rootMove : rootMoves) {
+				rootPos.do_move(rootMove.pv, st);
 
-		if (mainThread && CLI::Debug)
-			CLI::printPV(rootPos, rootDepth);
+				ss->ply = (ss - 1)->ply + 1;
+				ss->currentMove = rootMove.pv;
 
-		if(rootMoves[0].score >= VALUE_WIN)
-			Threads.stop = true;
+				StateInfo st2;
+				MovePicker mp(rootPos, ss->currentMove, MOVE_NONE, ss->killers);
+				while ((move = mp.next_move()) != MOVE_NONE) {
+					rootPos.do_move(move, st2);
+					(ss + 1)->currentMove = move;
+					value = negamax(rootPos, rootDepth - ONE_PLY, -VALUE_INFINITE, VALUE_INFINITE, ss + 1);
+					rootPos.undo_move(move);
+				}
 
-		if (Threads.stop)
-			completedDepth = rootDepth;
+				rootPos.undo_move(rootMove.pv);
+
+				if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
+					rootMove.score = rootMove.prevScore;
+				}
+				else {
+					rootMove.prevScore = rootMove.score;
+					rootMove.score = value;
+				}
+			}
+
+			std::stable_sort(rootMoves.begin(), rootMoves.end());
+
+			//if (mainThread && CLI::Debug)
+			//	CLI::printPV(rootPos, rootDepth);
+
+			//if (rootMoves[0].score >= VALUE_WIN)
+			//	Threads.stop = true;
+
+			if (Threads.stop)
+				completedDepth = rootDepth;
+		}
 	}
 }
 
@@ -132,7 +181,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 	int color = (ss->ply % 2 ? 1 : -1);
 
-	if (thisThread == Threads.main() && max_time(StartTime))
+	if (thisThread == Threads.main() && max_time(StartTime))// && !Threads.pondering)
 		Threads.stop = true;
 
 	Color win;
@@ -175,9 +224,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 		if (value > bestValue)
 			ttMove = move;
-
-		// SearchData->history[pos.side_to_move()][move] = value;
-
+		
 		bestValue = std::max(bestValue, value);
 		alpha = std::max(alpha, value);
 		if (alpha >= beta) {
