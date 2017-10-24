@@ -127,37 +127,12 @@ void Thread::search() {
 			for (RootMove &rootMove : rootMoves) {
 				rootPos.do_move(rootMove.pv, st);
 
-				ss->ply = (ss - 1)->ply + 1;
 				ss->currentMove = rootMove.pv;
 
-				StateInfo st2;
-				MovePicker mp(rootPos, ss->currentMove, MOVE_NONE, ss->killers);
-				while ((move = mp.next_move()) != MOVE_NONE) {
-					rootPos.do_move(move, st2);
-					(ss + 1)->currentMove = move;
-					value = negamax(rootPos, rootDepth - ONE_PLY, -VALUE_INFINITE, VALUE_INFINITE, ss + 1);
-					rootPos.undo_move(move);
-				}
+				negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
 
 				rootPos.undo_move(rootMove.pv);
-
-				/*
-				if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
-					rootMove.score = rootMove.prevScore;
-				}
-				else {
-					rootMove.prevScore = rootMove.score;
-					rootMove.score = value;
-				}*/
 			}
-
-			//std::stable_sort(rootMoves.begin(), rootMoves.end());
-
-			//if (mainThread && CLI::Debug)
-			//	CLI::printPV(rootPos, rootDepth);
-
-			//if (rootMoves[0].score >= VALUE_WIN)
-			//	Threads.stop = true;
 
 			if (Threads.stop)
 				completedDepth = rootDepth;
@@ -235,10 +210,8 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		}
 	}
 
-	//if (Threads.pondering) {
-		tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
-		thisThread->ttSaves++;
-	//}
+	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
+	thisThread->ttSaves++;
 
 	if (ss->killers[0] != move) {
 		ss->killers[1] = ss->killers[0];

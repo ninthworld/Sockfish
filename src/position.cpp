@@ -40,7 +40,7 @@ void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th
 	put_piece(R_NINJA, SQ_A7);			put_piece(R_NINJA, SQ_B7);			put_piece(R_NINJA, SQ_C7);
 	put_piece(R_SAMURAI, SQ_E7);		put_piece(R_SAMURAI, SQ_F7);		put_piece(R_SAMURAI, SQ_G7);
 	put_piece(R_KING, SQ_D8);
-	
+
 	sideToMove	= moveFirst;
 	gamePly		= 0;
 
