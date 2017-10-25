@@ -26,27 +26,15 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	return moveList;
 }
 
-MovePicker::MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread)
+MovePicker::MovePicker(const Position &p, const int ply, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread)
 	: pos(p)
 	, cur(moves)
 	, endMoves(generate(pos, cur)) {
 	
 	ExtMove *c = cur;
 	do {
-		c->score = thread->history[p.side_to_move()][c->move];
-		c->score = std::min(c->score, VALUE_INFINITE - 20);
+		c->score = thread->history[p.side_to_move()][c->move][ply];
 	} while (++c < endMoves);
-	
-	/*
-
-	if (Search::SearchData != nullptr) {
-		ExtMove *c = cur;
-		do {
-			c->score = Search::SearchData->history[pos.side_to_move()][c->move];
-			if (Search::SearchData->countermove[currentMove] == c->move)
-				c->score = Value(10000);
-		} while (++c < endMoves);
-	}*/
 
 	if (ttMove != MOVE_NONE) {
 		ExtMove *m;

@@ -19,7 +19,7 @@ Thread::~Thread() {
 
 void Thread::clear() {
 	std::memset(counterMoves, MOVE_NONE, 4096 * sizeof(Move));
-	std::memset(history, VALUE_ZERO, 2 * 4096 * sizeof(Value));
+	std::memset(history, VALUE_ZERO, 2 * 4096 * 32 * sizeof(Value));
 }
 
 void Thread::start_searching() {

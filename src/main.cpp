@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	
 	bool showDebug = false;
 	bool ponderEnabled = false;
-	int threadCount = 4;
+	int threadCount = 6;
 	int ttSizeMB = 32;
 
 	std::string token;

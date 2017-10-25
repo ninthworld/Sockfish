@@ -42,7 +42,7 @@ private:
 class MovePicker {
 public:
 
-	MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread);
+	MovePicker(const Position &p, const int ply, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread);
 	Move next_move();
 
 private:

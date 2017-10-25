@@ -176,7 +176,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 			return ttValue;
 	}
 	
-	MovePicker mp(pos, ss->currentMove, ttMove, ss->killers, thisThread->counterMoves[ss->currentMove], thisThread);
+	MovePicker mp(pos, ss->ply, ss->currentMove, ttMove, ss->killers, thisThread->counterMoves[ss->currentMove], thisThread);
 	while ((move = mp.next_move()) != MOVE_NONE) {
 		pos.do_move(move, st);
 		(ss + 1)->currentMove = move;
@@ -195,19 +195,22 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 		if (value > bestValue)
 			ttMove = move;
+
+		thisThread->history[pos.side_to_move()][move][ss->ply] = value;
 		
 		bestValue = std::max(bestValue, value);
 		alpha = std::max(alpha, value);
 		if (alpha >= beta) {
 			thisThread->counterMoves[ss->currentMove] = move;
-			thisThread->history[pos.side_to_move()][move] += Value(depth * depth);
-			//SearchData->countermove[ss->currentMove] = move;
-			//SearchData->history[pos.side_to_move()][move] = Value(depth * depth);
+
+			if (ss->killers[0] != move) {
+				ss->killers[1] = ss->killers[0];
+				ss->killers[0] = move;
+			}
+
 			break;
 		}
 	}
-
-
 
 	if (PvNode) {
 		ss->pv = ttMove;
@@ -215,11 +218,6 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
 	thisThread->ttSaves++;
-
-	if (ss->killers[0] != move) {
-		ss->killers[1] = ss->killers[0];
-		ss->killers[0] = move;
-	}
 
 	return bestValue;
 }

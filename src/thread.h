@@ -6,6 +6,7 @@
 #include <thread>
 #include <vector>
 
+#include "types.h"
 #include "position.h"
 #include "search.h"
 
@@ -35,7 +36,7 @@ public:
 	std::atomic<uint64_t> ttSaves;
 
 	Move counterMoves[4096];
-	Value history[COLOR_NB][4096];
+	Value history[COLOR_NB][4096][32];
 };
 
 struct MainThread : public Thread {
