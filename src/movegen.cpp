@@ -1,6 +1,7 @@
 #include "movegen.h"
 #include "position.h"
 #include "search.h"
+#include "thread.h"
 
 #include <iostream>
 
@@ -25,24 +26,31 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	return moveList;
 }
 
-MovePicker::MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[])
+MovePicker::MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread)
 	: pos(p)
 	, cur(moves)
 	, endMoves(generate(pos, cur)) {
+	
+	ExtMove *c = cur;
+	do {
+		c->score = thread->history[p.side_to_move()][c->move];
+	} while (++c < endMoves);
+	
+	/*
 
 	if (Search::SearchData != nullptr) {
 		ExtMove *c = cur;
 		do {
-			c->score = Search::SearchData->history[p.side_to_move()][c->move];
+			c->score = Search::SearchData->history[pos.side_to_move()][c->move];
 			if (Search::SearchData->countermove[currentMove] == c->move)
 				c->score = Value(10000);
 		} while (++c < endMoves);
-	}
+	}*/
 
 	if (ttMove != MOVE_NONE) {
 		ExtMove *m;
 		if ((m = std::find(cur, endMoves, ttMove))) {
-			m->score = VALUE_INFINITE;
+			m->score = VALUE_INFINITE - 1;
 		}
 	}
 
@@ -50,8 +58,15 @@ MovePicker::MovePicker(const Position &p, const Move currentMove, const Move ttM
 		if (killers[i] != MOVE_NONE) {
 			ExtMove *m;
 			if ((m = std::find(cur, endMoves, killers[i]))) {
-				m->score = VALUE_INFINITE - i - 1;
+				m->score = VALUE_INFINITE - i - 2;
 			}
+		}
+	}
+
+	if (counterMove != MOVE_NONE) {
+		ExtMove *m;
+		if ((m = std::find(cur, endMoves, counterMove))) {
+			m->score = VALUE_INFINITE - 10;
 		}
 	}
 

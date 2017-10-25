@@ -13,12 +13,15 @@ namespace Search {
 
 TimePoint StartTime;
 
-SearchInfo *SearchData;
-
 } // namespace Search
 
 namespace {
 
+enum NodeType {
+	PV, NonPV
+};
+
+template<NodeType NT>
 Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss);
 
 } // namespace
@@ -38,9 +41,6 @@ void Search::clear() {
 }
 
 void MainThread::search() {
-
-	SearchData = new SearchInfo();
-	std::memset(SearchData, 0, sizeof(SearchInfo));
 
 	if(Threads.pondering || TT.is_empty)
 		TT.new_search();
@@ -68,8 +68,6 @@ void MainThread::search() {
 
 	prevScore = bestThread->rootMoves[0].score;
 	Threads.bestThread = bestThread;
-
-	delete SearchData;
 }
 
 void Thread::search() {
@@ -80,69 +78,59 @@ void Thread::search() {
 
 	Depth rootDepth = DEPTH_ZERO;
 	Value value;
+	int moveCount;
 
-	if (!Threads.pondering) {
-		while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
-			if (id && rootDepth / ONE_PLY < id)
-				continue;
+	while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
+		if (id && rootDepth / ONE_PLY < id)
+			continue;
 
-			StateInfo st;
-			for (RootMove &rootMove : rootMoves) {
+		moveCount = 0;
+		StateInfo st;
+		for (RootMove &rootMove : rootMoves) {
 
-				rootPos.do_move(rootMove.pv, st);
+			moveCount++;
 
-				ss->currentMove = rootMove.pv;
-				value = -negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
+			rootPos.do_move(rootMove.pv, st);
 
-				rootPos.undo_move(rootMove.pv);
-
-				if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
-					rootMove.score = rootMove.prevScore;
-				}
-				else {
-					rootMove.prevScore = rootMove.score;
-					rootMove.score = value;
-				}
+			ss->currentMove = rootMove.pv;
+			if (moveCount == 1) {
+				ss->pv = rootMove.pv;
+				value = -negamax<PV>(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
+			}
+			else {
+				value = -negamax<NonPV>(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
 			}
 
-			std::stable_sort(rootMoves.begin(), rootMoves.end());
+			rootPos.undo_move(rootMove.pv);
 
-			if (mainThread && CLI::Debug)
-				CLI::printPV(rootPos, rootDepth);
-
-			if (rootMoves[0].score >= VALUE_WIN)
-				Threads.stop = true;
-
-			if (Threads.stop)
-				completedDepth = rootDepth;
-		}
-	}
-	else {
-		Move move;
-		while ((rootDepth += ONE_PLY) < MAX_PLY && !Threads.stop) {
-			if (id && rootDepth / ONE_PLY < id)
-				continue;
-
-			StateInfo st;
-			for (RootMove &rootMove : rootMoves) {
-				rootPos.do_move(rootMove.pv, st);
-
-				ss->currentMove = rootMove.pv;
-
-				negamax(rootPos, rootDepth, -VALUE_INFINITE, VALUE_INFINITE, ss);
-
-				rootPos.undo_move(rootMove.pv);
+			if (rootDepth > 5 * ONE_PLY && value == VALUE_ZERO) {
+				rootMove.score = rootMove.prevScore;
 			}
-
-			if (Threads.stop)
-				completedDepth = rootDepth;
+			else {
+				rootMove.prevScore = rootMove.score;
+				rootMove.score = value;
+			}
 		}
+
+		std::stable_sort(rootMoves.begin(), rootMoves.end());
+
+		if (mainThread && CLI::Debug)
+			CLI::printPV(rootPos, rootDepth);
+
+		if (rootMoves[0].score >= VALUE_WIN)
+			Threads.stop = true;
+
+		if (Threads.stop)
+			completedDepth = rootDepth;
 	}
 }
 
 namespace {
 
+template<NodeType NT>
 Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
+
+	const bool PvNode = (NT == PV);
 
 	StateInfo st;
 	Move move;
@@ -157,7 +145,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 	int color = (ss->ply % 2 ? 1 : -1);
 
-	if (thisThread == Threads.main() && max_time(StartTime))// && !Threads.pondering)
+	if (thisThread == Threads.main() && max_time(StartTime))
 		Threads.stop = true;
 
 	Color win;
@@ -187,12 +175,19 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		if (alpha >= beta)
 			return ttValue;
 	}
-
-	MovePicker mp(pos, ss->currentMove, ttMove, ss->killers);
+	
+	MovePicker mp(pos, ss->currentMove, ttMove, ss->killers, thisThread->counterMoves[ss->currentMove], thisThread);
 	while ((move = mp.next_move()) != MOVE_NONE) {
 		pos.do_move(move, st);
 		(ss + 1)->currentMove = move;
-		value = -negamax(pos, depth - ONE_PLY, -beta, -alpha, ss + 1);
+
+		if (PvNode && move == ss->pv) {
+			value = -negamax<PV>(pos, depth - ONE_PLY, -beta, -alpha, ss + 1);
+		}
+		else {
+			value = -negamax<NonPV>(pos, depth - ONE_PLY, -beta, -alpha, ss + 1);
+		}
+		
 		pos.undo_move(move);
 
 		if (Threads.stop.load(std::memory_order_relaxed))
@@ -204,10 +199,18 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		bestValue = std::max(bestValue, value);
 		alpha = std::max(alpha, value);
 		if (alpha >= beta) {
-			SearchData->countermove[ss->currentMove] = move;
-			SearchData->history[pos.side_to_move()][move] = Value(depth * depth);
+			thisThread->counterMoves[ss->currentMove] = move;
+			thisThread->history[pos.side_to_move()][move] = Value(depth * depth);
+			//SearchData->countermove[ss->currentMove] = move;
+			//SearchData->history[pos.side_to_move()][move] = Value(depth * depth);
 			break;
 		}
+	}
+
+
+
+	if (PvNode) {
+		ss->pv = ttMove;
 	}
 
 	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());

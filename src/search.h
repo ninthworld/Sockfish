@@ -6,11 +6,6 @@
 
 class Position;
 
-struct SearchInfo {
-	Move countermove[4096];
-	Value history[COLOR_NB][4096];
-};
-
 struct Stack {
 	Move pv;
 	int ply;
@@ -37,8 +32,6 @@ struct RootMove {
 typedef std::vector<RootMove> RootMoves;
 
 extern TimePoint StartTime;
-
-extern SearchInfo *SearchData;
 
 void clear();
 

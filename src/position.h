@@ -141,14 +141,24 @@ inline Value Position::score() const {
 		(pieceCount[W_NINJA] - pieceCount[R_NINJA]) * NinjaValue +
 		(pieceCount[W_SAMURAI] - pieceCount[R_SAMURAI]) * SamuraiValue;
 
+	int moveCount = 0;
 	for(Color c = WHITE; c <= RED; ++c){
 		for (PieceType pt = MINI_NINJA; pt < KING; ++pt) {
 			const Square *pl = squares(c, pt);
 			for (Square from = *pl; from != SQ_NONE; from = *++pl) {
 				score += ValueMap::Values[make_piece(c, pt)][from];
+
+				if (c == WHITE) {
+					moveCount += popcount(moves(from));
+				}
+				else {
+					moveCount -= popcount(moves(from));
+				}
 			}
 		}
 	}
+
+	score += moveCount * MoveCountValue;
 
 	return score;
 }

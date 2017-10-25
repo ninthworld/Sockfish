@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
 		if (token == "-d") {
 			showDebug = true;
 		}
-		else if (token == "-p") {
-			ponderEnabled = true;
-		}
+		//else if (token == "-p") {
+		//	ponderEnabled = true;
+		//}
 		else if (token == "-t") {
 			if (i + 1 < argc) {
 				std::istringstream iss(argv[++i]);
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	std::cout << "Sockfish - v2.2\n" << std::endl;
+	std::cout << "Sockfish - v2.3\n" << std::endl;
 
 	ValueMap::init();
 

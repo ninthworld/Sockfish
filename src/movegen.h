@@ -6,6 +6,7 @@
 #include "search.h"
 
 class Position;
+class Thread;
 
 struct ExtMove {
 	Move move;
@@ -40,7 +41,8 @@ private:
 
 class MovePicker {
 public:
-	MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[]);
+
+	MovePicker(const Position &p, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread);
 	Move next_move();
 
 private:

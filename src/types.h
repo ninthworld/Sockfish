@@ -54,7 +54,9 @@ enum Value : int {
 	MiniNinjaModifier		= 2,
 	MiniSamuraiModifier		= 2,
 	NinjaModifier			= 2,
-	SamuraiModifier			= 2
+	SamuraiModifier			= 2,
+
+	MoveCountValue			= 80
 };
 
 enum PieceType {

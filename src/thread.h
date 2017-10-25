@@ -33,6 +33,9 @@ public:
 	std::atomic<uint64_t> nodes;
 	std::atomic<uint64_t> ttHits;
 	std::atomic<uint64_t> ttSaves;
+
+	Move counterMoves[4096];
+	Value history[COLOR_NB][4096];
 };
 
 struct MainThread : public Thread {
