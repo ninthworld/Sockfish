@@ -30,8 +30,7 @@ void Search::clear() {
 
 	Threads.main()->wait_for_search_finished();
 	
-	if(!Threads.pondering)
-		TT.clear();
+	TT.clear();
 
 	for (Thread *th : Threads)
 		th->clear();
@@ -42,8 +41,7 @@ void Search::clear() {
 
 void MainThread::search() {
 
-	if(Threads.pondering || TT.is_empty)
-		TT.new_search();
+	TT.new_search();
 
 	for (Thread *th : Threads)
 		if (th != this)

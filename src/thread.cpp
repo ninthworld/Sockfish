@@ -67,11 +67,10 @@ void ThreadPool::set(size_t requested) {
 		delete back(), pop_back();
 }
 
-void ThreadPool::start_thinking(Position &pos, StateListPtr &states, const TimePoint &st, const bool ponder) {
+void ThreadPool::start_thinking(Position &pos, StateListPtr &states, const TimePoint &st) {
 
 	main()->wait_for_search_finished();
 
-	pondering = ponder;
 	stop = false;
 
 	Search::StartTime = st;

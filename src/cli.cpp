@@ -13,7 +13,6 @@
 namespace CLI {
 
 bool Debug;
-bool Ponder;
 std::vector<Move> MoveHistory;
 
 } // namespace CLI
@@ -43,7 +42,7 @@ void CLI::loop() {
 			std::cout << "Computer thinking...\n" << std::endl;
 
 			TimePoint startTime = now();
-			Threads.start_thinking(pos, states, startTime, false);
+			Threads.start_thinking(pos, states, startTime);
 			Threads.main()->wait_for_search_finished();
 
 			move = Threads.best_thread()->rootMoves[0].pv;
@@ -53,11 +52,6 @@ void CLI::loop() {
 			Search::clear();
 		}
 		else {
-
-			if (Ponder) {
-				std::cout << "AI Pondering...\n\n";
-				Threads.start_thinking(pos, states, now(), true);
-			}
 
 			do {
 				std::cout << "Enter move: ";
@@ -73,12 +67,6 @@ void CLI::loop() {
 				}
 
 			} while (move == MOVE_NULL);
-
-			if (Ponder) {
-				Threads.stop = true;
-				Threads.main()->wait_for_search_finished();
-				Search::clear();
-			}
 		}
 
 		StateInfo st;

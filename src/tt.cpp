@@ -27,7 +27,6 @@ void TranspositionTable::resize(size_t mbSize) {
 
 void TranspositionTable::clear() {
 	std::memset(table, 0, clusterCount * sizeof(Cluster));
-	is_empty = true;
 }
 
 TTEntry* TranspositionTable::probe(const Key key, bool &found) const {

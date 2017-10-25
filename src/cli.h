@@ -10,10 +10,9 @@ class Position;
 namespace CLI {
 
 extern bool Debug;
-extern bool Ponder;
 extern std::vector<Move> MoveHistory;
 
-inline void init(bool showDebug, bool ponderEnabled) { CLI::Debug = showDebug; CLI::Ponder = ponderEnabled; }
+inline void init(bool showDebug) { CLI::Debug = showDebug; }
 void loop();
 void printPosition(Position &pos);
 void printBitboard(Bitboard bb);

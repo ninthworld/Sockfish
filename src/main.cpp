@@ -12,7 +12,6 @@
 int main(int argc, char *argv[]) {
 	
 	bool showDebug = false;
-	bool ponderEnabled = false;
 	int threadCount = 6;
 	int ttSizeMB = 32;
 
@@ -24,9 +23,6 @@ int main(int argc, char *argv[]) {
 		if (token == "-d") {
 			showDebug = true;
 		}
-		//else if (token == "-p") {
-		//	ponderEnabled = true;
-		//}
 		else if (token == "-t") {
 			if (i + 1 < argc) {
 				std::istringstream iss(argv[++i]);
@@ -48,7 +44,7 @@ int main(int argc, char *argv[]) {
 	ValueMap::init();
 
 	std::cout << "Initializing Interface......... ";
-	CLI::init(showDebug, ponderEnabled);
+	CLI::init(showDebug);
 	std::cout << "Done\n";
 
 	std::cout << "Initializing Bitboards......... ";
@@ -72,7 +68,6 @@ int main(int argc, char *argv[]) {
 	std::cout << "Done\n";
 
 	std::cout << "Show Debug : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
-	std::cout << "Pondering  : " << (ponderEnabled ? "ENABLED" : "DISABLED") << std::endl;
 
 	Search::clear();
 
