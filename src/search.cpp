@@ -200,7 +200,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		alpha = std::max(alpha, value);
 		if (alpha >= beta) {
 			thisThread->counterMoves[ss->currentMove] = move;
-			thisThread->history[pos.side_to_move()][move] = Value(depth * depth);
+			thisThread->history[pos.side_to_move()][move] += Value(depth * depth);
 			//SearchData->countermove[ss->currentMove] = move;
 			//SearchData->history[pos.side_to_move()][move] = Value(depth * depth);
 			break;

@@ -34,6 +34,7 @@ MovePicker::MovePicker(const Position &p, const Move currentMove, const Move ttM
 	ExtMove *c = cur;
 	do {
 		c->score = thread->history[p.side_to_move()][c->move];
+		c->score = std::min(c->score, VALUE_INFINITE - 20);
 	} while (++c < endMoves);
 	
 	/*
