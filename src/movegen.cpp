@@ -35,25 +35,22 @@ MovePicker::MovePicker(const Position &p, const int ply, const Move currentMove,
 	
 	ExtMove *m = cur;
 	do {
-		m->score = thread->history[p.side_to_move()][m->move][ply];
+		if (m->move == ttMove) {
+			m->score = VALUE_INFINITE - 1;
+		}
+		else if (m->move == killers[0]) {
+			m->score = VALUE_INFINITE - 2;
+		}
+		else if (m->move == killers[1]) {
+			m->score = VALUE_INFINITE - 3;
+		}
+		else if (m->move == thread->counterMoves[currentMove]) {
+			m->score = VALUE_INFINITE - 4;
+		}
+		else {
+			m->score = thread->history[p.side_to_move()][m->move][ply];
+		}
 	} while (++m < endMoves);
-
-	if (ttMove != MOVE_NONE && (m = std::find(cur, endMoves, ttMove))) {
-		m->score = VALUE_INFINITE - 1;
-	}
-
-	if (killers[0] != MOVE_NONE && (m = std::find(cur, endMoves, killers[0]))) {
-		m->score = VALUE_INFINITE - 2;
-	}
-
-	if (killers[1] != MOVE_NONE && (m = std::find(cur, endMoves, killers[1]))) {
-		m->score = VALUE_INFINITE - 3;
-	}
-
-	Move counterMove = thread->counterMoves[currentMove];
-	if (counterMove != MOVE_NONE && (m = std::find(cur, endMoves, counterMove))) {
-		m->score = VALUE_INFINITE - 4;
-	}
 
 	std::stable_sort(cur, endMoves);
 }
