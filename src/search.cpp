@@ -112,7 +112,7 @@ void Thread::search() {
 
 		std::stable_sort(rootMoves.begin(), rootMoves.end());
 
-		if (mainThread && CLI::Debug && !(Threads.stop && CLI::NullMove))
+		if (mainThread && CLI::Debug)
 			CLI::printPV(rootPos, rootDepth);
 
 		if (rootMoves[0].score >= VALUE_WIN)
@@ -173,26 +173,6 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 			beta = std::min(beta, ttValue);
 		if (alpha >= beta)
 			return ttValue;
-	}
-
-	if (!PvNode && CLI::NullMove && depth >= 13 * ONE_PLY) {
-		Depth R = (depth > 6 ? 4 : 3) * ONE_PLY;
-
-		pos.do_null_move(st);
-		Value nullValue = -negamax<NonPV>(pos, depth - R, -beta, -beta + 1, ss + 1);
-		pos.undo_null_move();
-
-		if (Threads.stop.load(std::memory_order_relaxed))
-			return VALUE_ZERO;
-
-		if (nullValue >= beta) {
-			if (depth < 12 * ONE_PLY)
-				return nullValue;
-
-			Value v = negamax<NonPV>(pos, depth - R, -beta, -beta + 1, ss);
-			if (v >= beta)
-				return nullValue;
-		}
 	}
 	
 	int moveCount = 0;
