@@ -2,6 +2,7 @@
 #include "position.h"
 #include "search.h"
 #include "thread.h"
+#include "cli.h"
 
 #include <iostream>
 
@@ -12,7 +13,8 @@ namespace {
 ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	Color c = pos.side_to_move();
 
-	for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
+	//for (PieceType pt = MINI_NINJA; pt <= SAMURAI; ++pt) {
+	for (PieceType pt = SAMURAI; pt >= MINI_NINJA; --pt) {
 		const Square *pl = pos.squares(c, pt);
 
 		for (Square from = *pl; from != SQ_NONE; from = *++pl) {
@@ -26,37 +28,31 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	return moveList;
 }
 
-MovePicker::MovePicker(const Position &p, const int ply, const Move currentMove, const Move ttMove, const Move killers[], const Move counterMove, Thread *thread)
+MovePicker::MovePicker(const Position &p, const int ply, const Move currentMove, const Move ttMove, const Move killers[], Thread *thread)
 	: pos(p)
 	, cur(moves)
 	, endMoves(generate(pos, cur)) {
 	
-	ExtMove *c = cur;
+	ExtMove *m = cur;
 	do {
-		c->score = thread->history[p.side_to_move()][c->move][ply];
-	} while (++c < endMoves);
+		m->score = thread->history[p.side_to_move()][m->move][ply];
+	} while (++m < endMoves);
 
-	if (ttMove != MOVE_NONE) {
-		ExtMove *m;
-		if ((m = std::find(cur, endMoves, ttMove))) {
-			m->score = VALUE_INFINITE - 1;
-		}
+	if (ttMove != MOVE_NONE && (m = std::find(cur, endMoves, ttMove))) {
+		m->score = VALUE_INFINITE - 1;
 	}
 
-	for (int i = 0; i < 2; i++) {
-		if (killers[i] != MOVE_NONE) {
-			ExtMove *m;
-			if ((m = std::find(cur, endMoves, killers[i]))) {
-				m->score = VALUE_INFINITE - i - 2;
-			}
-		}
+	if (killers[0] != MOVE_NONE && (m = std::find(cur, endMoves, killers[0]))) {
+		m->score = VALUE_INFINITE - 2;
 	}
 
-	if (counterMove != MOVE_NONE) {
-		ExtMove *m;
-		if ((m = std::find(cur, endMoves, counterMove))) {
-			m->score = VALUE_INFINITE - 10;
-		}
+	if (killers[1] != MOVE_NONE && (m = std::find(cur, endMoves, killers[1]))) {
+		m->score = VALUE_INFINITE - 3;
+	}
+
+	Move counterMove = thread->counterMoves[currentMove];
+	if (counterMove != MOVE_NONE && (m = std::find(cur, endMoves, counterMove))) {
+		m->score = VALUE_INFINITE - 4;
 	}
 
 	std::stable_sort(cur, endMoves);

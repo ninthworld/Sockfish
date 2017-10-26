@@ -11,6 +11,7 @@
 
 int main(int argc, char *argv[]) {
 	
+	bool nullMove = false;
 	bool showDebug = false;
 	int threadCount = 6;
 	int ttSizeMB = 32;
@@ -22,6 +23,9 @@ int main(int argc, char *argv[]) {
 
 		if (token == "-d") {
 			showDebug = true;
+		}
+		else if (token == "-n") {
+			nullMove = true;
 		}
 		else if (token == "-t") {
 			if (i + 1 < argc) {
@@ -39,12 +43,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	std::cout << "Sockfish - v2.3\n" << std::endl;
+	std::cout << "Sockfish - v2.4\n" << std::endl;
 
 	ValueMap::init();
 
 	std::cout << "Initializing Interface......... ";
-	CLI::init(showDebug);
+	CLI::init(showDebug, nullMove);
 	std::cout << "Done\n";
 
 	std::cout << "Initializing Bitboards......... ";
@@ -67,14 +71,17 @@ int main(int argc, char *argv[]) {
 	Threads.init(threadCount);
 	std::cout << "Done\n";
 
-	std::cout << "Show Debug : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
+	std::cout << "Show Debug   : " << (showDebug ? "ENABLED" : "DISABLED") << std::endl;
+	std::cout << "Use NullMove : " << (nullMove ? "ENABLED" : "DISABLED") << std::endl;
 
 	Search::clear();
 
 	std::cout << std::endl;
 
 	do {
-		CLI::loop();
+		std::thread cliThread(CLI::loop);
+		cliThread.join();
+
 		if (!CLI::promptYesNo("Would you like to play again"))
 			break;
 	} while (true);

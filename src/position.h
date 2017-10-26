@@ -40,6 +40,9 @@ public:
 	void do_move(Move m, StateInfo &newSt);
 	void undo_move(Move m);
 
+	void do_null_move(StateInfo &newSt);
+	void undo_null_move();
+
 	Color side_to_move() const;
 	int game_ply() const;
 

@@ -112,7 +112,7 @@ void Thread::search() {
 
 		std::stable_sort(rootMoves.begin(), rootMoves.end());
 
-		if (mainThread && CLI::Debug)
+		if (mainThread && CLI::Debug && !Threads.stop)
 			CLI::printPV(rootPos, rootDepth);
 
 		if (rootMoves[0].score >= VALUE_WIN)
@@ -138,6 +138,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 	Thread *thisThread = pos.this_thread();
 	thisThread->nodes++;
 
+	ss->currentMove = (ss->currentMove < MOVE_NONE ? MOVE_NONE : ss->currentMove);
 	ss->ply = (ss - 1)->ply + 1;
 	(ss + 2)->killers[0] = (ss + 2)->killers[1] = MOVE_NONE;
 
@@ -173,13 +174,35 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		if (alpha >= beta)
 			return ttValue;
 	}
+
+	if (!PvNode && CLI::NullMove && depth >= 13 * ONE_PLY) {
+		Depth R = (depth > 6 ? 4 : 3) * ONE_PLY;
+
+		pos.do_null_move(st);
+		Value nullValue = -negamax<NonPV>(pos, depth - R, -beta, -beta + 1, ss + 1);
+		pos.undo_null_move();
+
+		if (Threads.stop.load(std::memory_order_relaxed))
+			return VALUE_ZERO;
+
+		if (nullValue >= beta) {
+			if (depth < 12 * ONE_PLY)
+				return nullValue;
+
+			Value v = negamax<NonPV>(pos, depth - R, -beta, -beta + 1, ss);
+			if (v >= beta)
+				return nullValue;
+		}
+	}
 	
-	MovePicker mp(pos, ss->ply, ss->currentMove, ttMove, ss->killers, thisThread->counterMoves[ss->currentMove], thisThread);
+	int moveCount = 0;
+	MovePicker mp(pos, ss->ply, ss->currentMove, ttMove, ss->killers, thisThread);
 	while ((move = mp.next_move()) != MOVE_NONE) {
 		pos.do_move(move, st);
 		(ss + 1)->currentMove = move;
+		moveCount++;
 
-		if (PvNode && move == ss->pv) {
+		if (PvNode && moveCount == 1) {
 			value = -negamax<PV>(pos, depth - ONE_PLY, -beta, -alpha, ss + 1);
 		}
 		else {
@@ -187,6 +210,10 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		}
 		
 		pos.undo_move(move);
+
+		if (moveCount < THREAD_MOVECOUNT_NB) {
+			thisThread->moveCount[moveCount]++;
+		}
 
 		if (Threads.stop.load(std::memory_order_relaxed))
 			return VALUE_ZERO;
@@ -199,6 +226,7 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		bestValue = std::max(bestValue, value);
 		alpha = std::max(alpha, value);
 		if (alpha >= beta) {
+
 			thisThread->counterMoves[ss->currentMove] = move;
 
 			if (ss->killers[0] != move) {
@@ -230,10 +258,15 @@ void CLI::printPV(Position &pos, Depth depth) {
 
 	uint64_t ttHits = 0;
 	uint64_t ttSaves = 0;
+	float movePercent[THREAD_MOVECOUNT_NB];
+	std::memset(movePercent, 0, THREAD_MOVECOUNT_NB * sizeof(float));
 
 	for (Thread *thread : Threads) {
 		ttHits += thread->ttHits;
 		ttSaves += thread->ttSaves;
+		for (int i = 1; i < THREAD_MOVECOUNT_NB; i++) {
+			movePercent[i] += (thread->moveCount[i] / (float)nodesSearched) * 100.0f;
+		}
 	}
 
 	std::printf("depth %2d | score %6d | nodes %10I64d | nps %10I64d | time %6dms | pv %s | hits %8I64d | saves %8I64d\n", 
@@ -246,4 +279,10 @@ void CLI::printPV(Position &pos, Depth depth) {
 		ttHits,
 		ttSaves
 	);
+
+	std::cout << "                          distr ";
+	for (int i = 1; i < THREAD_MOVECOUNT_NB; i++) {
+		std::printf("%2.2f%% ", movePercent[i]);
+	}
+	std::cout << std::endl;
 }

@@ -12,6 +12,7 @@
 
 namespace CLI {
 
+bool NullMove;
 bool Debug;
 std::vector<Move> MoveHistory;
 
@@ -43,11 +44,17 @@ void CLI::loop() {
 
 			TimePoint startTime = now();
 			Threads.start_thinking(pos, states, startTime);
-			Threads.main()->wait_for_search_finished();
+
+			while (!Threads.stop) {
+				if (max_time(startTime))
+					Threads.stop = true;
+			};
 
 			move = Threads.best_thread()->rootMoves[0].pv;
 
-			std::cout << "Move found! (" << float(now() - startTime) << "ms, depth=" << Threads.best_thread()->completedDepth << ")" << std::endl;
+			std::cout << "\nMove found! (" << float(now() - startTime) << "ms, depth=" << Threads.best_thread()->completedDepth << ", pv=" << encode_move(move) << ")" << std::endl;
+
+			Threads.main()->wait_for_search_finished();
 
 			Search::clear();
 		}

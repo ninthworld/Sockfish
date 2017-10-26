@@ -10,6 +10,8 @@
 #include "position.h"
 #include "search.h"
 
+#define THREAD_MOVECOUNT_NB 6
+
 class Thread {
 
 	std::mutex mutex;
@@ -34,6 +36,7 @@ public:
 	std::atomic<uint64_t> nodes;
 	std::atomic<uint64_t> ttHits;
 	std::atomic<uint64_t> ttSaves;
+	int moveCount[THREAD_MOVECOUNT_NB];
 
 	Move counterMoves[4096];
 	Value history[COLOR_NB][4096][32];

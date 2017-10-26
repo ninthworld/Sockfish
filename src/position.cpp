@@ -141,3 +141,28 @@ void Position::undo_move(Move m) {
 	st = st->previous;
 	--gamePly;
 }
+
+void Position::do_null_move(StateInfo &newSt) {
+
+	Key k = st->key ^ Zobrist::side;
+
+	newSt.previous = st;
+	st = &newSt;
+
+	++gamePly;
+
+	Color c = sideToMove;
+	Color nC = ~c;
+
+	sideToMove = nC;
+
+	st->key = k;
+}
+
+void Position::undo_null_move() {
+
+	sideToMove = ~sideToMove;
+
+	st = st->previous;
+	--gamePly;
+}
