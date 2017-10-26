@@ -112,7 +112,7 @@ void Thread::search() {
 
 		std::stable_sort(rootMoves.begin(), rootMoves.end());
 
-		if (mainThread && CLI::Debug && !Threads.stop)
+		if (mainThread && CLI::Debug && !(Threads.stop && CLI::NullMove))
 			CLI::printPV(rootPos, rootDepth);
 
 		if (rootMoves[0].score >= VALUE_WIN)

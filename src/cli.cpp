@@ -45,16 +45,22 @@ void CLI::loop() {
 			TimePoint startTime = now();
 			Threads.start_thinking(pos, states, startTime);
 
-			while (!Threads.stop) {
-				if (max_time(startTime))
-					Threads.stop = true;
-			};
+			if (NullMove) {
+				while (!Threads.stop) {
+					if (max_time(startTime))
+						Threads.stop = true;
+				};
+			}
+			else {
+				Threads.main()->wait_for_search_finished();
+			}
 
 			move = Threads.best_thread()->rootMoves[0].pv;
 
 			std::cout << "\nMove found! (" << float(now() - startTime) << "ms, depth=" << Threads.best_thread()->completedDepth << ", pv=" << encode_move(move) << ")" << std::endl;
 
-			Threads.main()->wait_for_search_finished();
+			if(NullMove)
+				Threads.main()->wait_for_search_finished();
 
 			Search::clear();
 		}

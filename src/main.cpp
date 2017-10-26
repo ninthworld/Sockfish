@@ -12,7 +12,7 @@
 int main(int argc, char *argv[]) {
 	
 	bool nullMove = false;
-	bool showDebug = false;
+	bool showDebug = true;
 	int threadCount = 6;
 	int ttSizeMB = 32;
 
