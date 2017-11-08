@@ -1,15 +1,26 @@
 # Sockfish
 AI for game Hi-Ya! (CSC 180 Fall 2017)
+based on Stockfish [1]
 
-* Minimax (implemented with Negamax)
+Winner of CSC 180 Fall 2017 AI Tournament, 19-1 [2]
+
+![Hi-Ya! Board](screenshot.png)
+
+**Features - **
+* Minimax (implemented with Negamax [3])
 * Alpha-Beta Pruning
 * Iterative Deepening
-* PV Move Ordering (top-level only)
+* Top-Level PV Move Ordering
 * Killer Move
 * Countermove
 * History Heuristic
 * Transposition Table (Zobrist Hash for key)
-* Multithreading (Offset starting iterative depth to fill global transposition, history, and countermove tables)
-* Pondering (Seeds transposition table, capped at 5 seconds)
+* Multithreading (Lazy SMP [4])
 * Bitboards + Magic Bitboards
-* Piece Value + Positional Evaluation Heuristic
+* Evaluation Heurisitics: Piece Value, Piece Position, Piece Moves
+
+**References - **
+[1]: https://github.com/official-stockfish/Stockfish
+[2]: http://athena.ecs.csus.edu/~gordonvs/180/Tournaments/17Ftres.html
+[3]: https://en.wikipedia.org/wiki/Negamax
+[4]: https://chessprogramming.wikispaces.com/Lazy+SMP

@@ -11,8 +11,16 @@ void initMagicBBs();
 
 } // namespace Bitboards
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Code snippet from Stockfish <bitboard.h>
+<code>
+*/
 const Bitboard AllSquares = ~Bitboard(0);
-//const Bitboard DarkSquares = 0x55AA55AA55AA55ULL;
 const Bitboard RangeSquares = 0xFFFFFFFFFFFFFFULL;
 
 const Bitboard FileABB = 0xFF;
@@ -37,10 +45,21 @@ extern int SquareDistance[SQUARE_NB][SQUARE_NB];
 extern Bitboard SquareBB[SQUARE_NB];
 extern Bitboard FileBB[FILE_NB];
 extern Bitboard RankBB[RANK_NB];
+/*
+</code>
+*/
+
+/*
+Derived from Stockfish
+*/
 extern Bitboard RankFillBB[RANK_NB];
 extern Bitboard MiniMovesBB[PIECE_NB][SQUARE_NB];
 extern Bitboard MiniAttacksBB[PIECE_NB][SQUARE_NB];
 
+/*
+Modified code snippet from Stockfish <bitboard.h>
+<modified_code>
+*/
 struct Magic {
 	Bitboard mask;
 	Bitboard magic;
@@ -54,7 +73,14 @@ struct Magic {
 
 extern Magic NinjaMagics[SQUARE_NB];
 extern Magic SamuraiMagics[SQUARE_NB];
+/*
+</modified_code>
+*/
 
+/*
+Code snippet from Stockfish <bitboard.h>
+<code>
+*/
 inline Bitboard operator&(Bitboard b, Square s) {
 	return b & SquareBB[s];
 }
@@ -102,7 +128,13 @@ inline Bitboard square_bb(Square s) {
 inline Bitboard range_mask(Bitboard b) {
 	return b & RangeSquares;
 }
+/*
+</code>
+*/
 
+/*
+Derived from Stockfish
+*/
 template<Square D>
 inline Bitboard shift(Bitboard b) {
 	switch (D) {
@@ -127,12 +159,24 @@ inline Bitboard shift(Bitboard b) {
 	}
 }
 
+/*
+Code snippet from Stockfish <bitboard.h>
+<code>
+*/
 template<typename T> inline int distance(T x, T y) { return x < y ? y - x : x - y; }
 template<> inline int distance<Square>(Square x, Square y) { return SquareDistance[x][y]; }
 template<typename T1, typename T2> inline int distance(T2 x, T2 y);
 template<> inline int distance<File>(Square x, Square y) { return distance(file_of(x), file_of(y)); }
 template<> inline int distance<Rank>(Square x, Square y) { return distance(rank_of(x), rank_of(y)); }
+/*
+</code>
+*/
 
+/*
+Inspired by Stockfish's move and attack bitboards
+
+Magic bitboard implementation derived from Stockfish <bitboard.h>
+*/
 inline Bitboard moves_bb(Square s, Piece p, Bitboard occupied) {
 	if (p == NO_PIECE)
 		return 0;
@@ -177,6 +221,10 @@ inline Bitboard attacks_bb(Square s, Piece p, Bitboard whiteOccupied, Bitboard r
 	return attackBB & (c == WHITE ? shift<SOUTH>(redOccupied) : shift<NORTH>(whiteOccupied));
 };
 
+/*
+Code snippet from Stockfish <bitboard.h>
+<code>
+*/
 inline int popcount(Bitboard b) {
 	extern uint8_t PopCnt16[1 << 16];
 	union { Bitboard bb; uint16_t u[4]; } v = { b };
@@ -192,6 +240,14 @@ inline Square pop_lsb(Bitboard* b) {
 	return s;
 }
 
+/*
+</code>
+*/
+
+/*
+Code snippet from Stockfish <misc.h>
+<code>
+*/
 class PRNG {
 	uint64_t s;
 	uint64_t rand64() {
@@ -210,3 +266,6 @@ public:
 		return T(rand64() & rand64() & rand64());
 	}
 };
+/*
+</code>
+*/

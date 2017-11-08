@@ -4,12 +4,10 @@
 #include "thread.h"
 #include "cli.h"
 
-#include <iostream>
-
-namespace {
-
-} // namespace
-
+/*
+Heavily modified from Stockfish <movegen.cpp>
+<modified_code>
+*/
 ExtMove* generate(const Position &pos, ExtMove *moveList) {
 	Color c = pos.side_to_move();
 
@@ -27,7 +25,13 @@ ExtMove* generate(const Position &pos, ExtMove *moveList) {
 
 	return moveList;
 }
+/*
+</modified_code>
+*/
 
+/*
+Inspired by Stockfish's move generation ordering
+*/
 MovePicker::MovePicker(const Position &p, const int ply, const Move currentMove, const Move ttMove, const Move killers[], Thread *thread)
 	: pos(p)
 	, cur(moves)

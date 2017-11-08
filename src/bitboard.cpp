@@ -2,6 +2,15 @@
 
 #include "bitboard.h"
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Code snippet from Stockfish <bitboard.cpp>
+<code>
+*/
 uint8_t PopCnt16[1 << 16];
 int SquareDistance[SQUARE_NB][SQUARE_NB];
 
@@ -9,12 +18,23 @@ Bitboard SquareBB[SQUARE_NB];
 Bitboard FileBB[FILE_NB];
 Bitboard RankBB[RANK_NB];
 Bitboard RankFillBB[RANK_NB];
+/*
+</code>
+*/
+
+/*
+Derived from Stockfish
+*/
 Bitboard MiniMovesBB[PIECE_NB][SQUARE_NB];
 Bitboard MiniAttacksBB[PIECE_NB][SQUARE_NB];
 
 Magic NinjaMagics[SQUARE_NB];
 Magic SamuraiMagics[SQUARE_NB];
 
+/*
+Code snippet from Stockfish <bitboard.cpp>
+<code>
+*/
 namespace {
 
 const uint64_t DeBruijn64 = 0x3F79D71B4CB0A89ULL;
@@ -68,9 +88,16 @@ Square msb(Bitboard b) {
 
 	return Square(result + MSBTable[b32]);
 }
+/*
+</code>
+*/
 
 void Bitboards::initBBs() {
 
+	/*
+	Code snippet from Stockfish <bitboard.cpp>
+	<code>
+	*/
 	for (unsigned i = 0; i < (1 << 16); ++i)
 		PopCnt16[i] = (uint8_t)popcount16(i);
 
@@ -88,18 +115,26 @@ void Bitboards::initBBs() {
 	for (Rank r = RANK_1; r <= RANK_8; ++r)
 		RankBB[r] = r > RANK_1 ? RankBB[r - 1] << 1 : Rank1BB;
 
+	for (Square s1 = SQ_A1; s1 <= SQ_G8; ++s1)
+		for (Square s2 = SQ_A1; s2 <= SQ_G8; ++s2)
+			if (s1 != s2)
+				SquareDistance[s1][s2] = std::max(distance<File>(s1, s2), distance<Rank>(s1, s2));
+	/*
+	</code>
+	*/
+
+	/*
+	Derived from Stockfish
+	*/
 	for (Rank r1 = RANK_1; r1 <= RANK_8; ++r1) {
 		RankFillBB[r1] = RankBB[r1];
 		for (Rank r2 = RANK_1; r2 < r1; ++r2)
 			RankFillBB[r1] |= RankBB[r2];
 	}
 
-	for (Square s1 = SQ_A1; s1 <= SQ_G8; ++s1)
-		for (Square s2 = SQ_A1; s2 <= SQ_G8; ++s2)
-			if (s1 != s2)
-				SquareDistance[s1][s2] = std::max(distance<File>(s1, s2), distance<Rank>(s1, s2));
-
-
+	/*
+	Inspired by Stockfish's pawn move
+	*/
 	for (Rank r = RANK_1; r <= RANK_8; ++r)
 		for (File f = FILE_A; f <= FILE_G; ++f) {
 			Square s = make_square(f, r);
@@ -129,6 +164,9 @@ void Bitboards::initBBs() {
 		}
 }
 
+/*
+Derived from Stockfish
+*/
 void Bitboards::initMagicBBs() {
 
 	Square NinjaDeltas[] = { NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST };
@@ -139,6 +177,10 @@ void Bitboards::initMagicBBs() {
 
 }
 
+/*
+Modified code snippet from Stockfish <bitboard.cpp>
+<modified_code>
+*/
 namespace {
 
 Bitboard sliding_attack(Square deltas[], Square sq, Bitboard occupied) {
@@ -200,3 +242,6 @@ void init_magics(Bitboard table[], Magic magics[], Square deltas[]) {
 }
 
 } // namespace
+/*
+</modified_code>
+*/

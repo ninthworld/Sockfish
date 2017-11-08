@@ -26,6 +26,15 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss);
 
 } // namespace
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Heavily modified code snippet from Stockfish <search.cpp>
+<modified_code>
+*/
 void Search::clear() {
 
 	Threads.main()->wait_for_search_finished();
@@ -67,7 +76,14 @@ void MainThread::search() {
 	prevScore = bestThread->rootMoves[0].score;
 	Threads.bestThread = bestThread;
 }
+/*
+</modified_code>
+*/
 
+/*
+Inspired by Stockfish thread search
+Inspired by https://chessprogramming.wikispaces.com/Lazy+SMP
+*/
 void Thread::search() {
 	MainThread *mainThread = (this == Threads.main() ? Threads.main() : nullptr);
 
@@ -125,6 +141,10 @@ void Thread::search() {
 
 namespace {
 
+/*
+Inspired by Stockfish
+Inspired by https://en.wikipedia.org/wiki/Negamax
+*/
 template<NodeType NT>
 Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
@@ -154,12 +174,19 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 	if (depth <= DEPTH_ZERO)
 		return color * pos.score();
 
+	/*
+	Modified code snippet from Stockfish <search.cpp>
+	<modified_code>
+	*/
 	bool ttHit;
 	TTEntry *tte = TT.probe(pos.key(), ttHit);
 	Value ttValue = (ttHit ? tte->value() : VALUE_NONE);
 	Depth ttDepth = (ttHit ? tte->depth() : DEPTH_NONE);
 	Move ttMove = (ttHit ? tte->move() : MOVE_NONE);
 	Bound ttBound = (ttHit ? tte->bound() : BOUND_NONE);
+	/*
+	</modified_code>
+	*/
 
 	Value alphaOrig = alpha;
 	if (ttHit && ttDepth >= depth && ttValue != VALUE_NONE) {
@@ -222,7 +249,15 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 		ss->pv = ttMove;
 	}
 
+	/*
+	Modified code snippet from Stockfish <search.cpp>
+	<modified_code>
+	*/
 	tte->save(pos.key(), bestValue, (bestValue <= alphaOrig ? BOUND_UPPER : (bestValue >= beta ? BOUND_LOWER : BOUND_EXACT)), depth, ttMove, VALUE_NONE, TT.generation());
+	/*
+	</modified_code>
+	*/
+
 	thisThread->ttSaves++;
 
 	return bestValue;
@@ -230,7 +265,9 @@ Value negamax(Position &pos, Depth depth, Value alpha, Value beta, Stack *ss) {
 
 } // namespace
 
-
+/*
+Inspired by Stockfish's debug output
+*/
 void CLI::printPV(Position &pos, Depth depth) {
 	int elapsed = int(now() - StartTime) + 1;
 	const RootMoves &rootMoves = pos.this_thread()->rootMoves;

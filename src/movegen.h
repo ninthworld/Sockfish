@@ -8,6 +8,9 @@
 class Position;
 class Thread;
 
+/*
+Inspired by Stockfish
+*/
 struct ExtMove {
 	Move move;
 	Value score = -VALUE_INFINITE;
@@ -22,6 +25,15 @@ struct ExtMove {
 	}
 };
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Modified code snippet from Stockfish <movegen.h>
+<modified_code>
+*/
 ExtMove* generate(const Position &pos, ExtMove *moveList);
 
 struct MoveList {
@@ -38,7 +50,14 @@ struct MoveList {
 private:
 	ExtMove moveList[MAX_MOVES], *last;
 };
+/*
+</modified_code>
+*/
 
+/*
+Modified from Stockfish <movepick.h>
+<modified_code>
+*/
 class MovePicker {
 public:
 
@@ -53,3 +72,6 @@ private:
 	ExtMove *cur, *endMoves;
 	ExtMove moves[MAX_MOVES];
 };
+/*
+</modified_code>
+*/

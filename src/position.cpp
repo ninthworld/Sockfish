@@ -2,6 +2,15 @@
 #include "position.h"
 #include "thread.h"
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Modified code snippet from Stockfish <position.cpp>
+<modified_code>
+*/
 namespace Zobrist {
 
 Key psq[PIECE_NB][SQUARE_NB];
@@ -21,6 +30,9 @@ void Position::init() {
 
 	Zobrist::side = rng.rand<Key>();
 }
+/*
+</modified_code>
+*/
 
 void Position::set_starting(Color moveFirst, Color ai, StateInfo *si, Thread *th) {
 	std::memset(this, 0, sizeof(Position));
@@ -55,6 +67,9 @@ void Position::set(Position &pos, StateInfo *si, Thread *th) {
 	thisThread = th;
 }
 
+/*
+Inspired by Stockfish's move operation
+*/
 void Position::do_move(Move m, StateInfo &newSt) {
 	
 	Key k = st->key ^ Zobrist::side;
@@ -112,6 +127,9 @@ void Position::do_move(Move m, StateInfo &newSt) {
 	st->key = k;
 }
 
+/*
+Inspired by Stockfish's undo move operation
+*/
 void Position::undo_move(Move m) {
 
 	sideToMove = ~sideToMove;

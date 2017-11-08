@@ -6,6 +6,15 @@
 #include "bitboard.h"
 #include "types.h"
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Modified code snippet from Stockfish <position.h>
+<modified_code>
+*/
 struct StateInfo {
 	Key key;
 	Piece attackedPiece;
@@ -66,7 +75,14 @@ private:
 	Thread* thisThread;
 
 }; // class Position
+/*
+</modified_code>
+*/
 
+/*
+Code snippet from Stockfish <position.h>
+<code>
+*/
 inline Bitboard Position::pieces() const {
 	return byTypeBB[ALL_PIECES];
 }
@@ -90,7 +106,13 @@ inline Piece Position::piece_on(Square s) const {
 inline const Square* Position::squares(Color c, PieceType pt) const {
 	return pieceList[make_piece(c, pt)];
 }
+/*
+</code>
+*/
 
+/*
+Inspired by Stockfish
+*/
 inline Bitboard Position::moves(Square s) const {
 	return (moves_bb(s, board[s], byTypeBB[ALL_PIECES]) |
 			attacks_bb(s, board[s], byColorBB[WHITE], byColorBB[RED]));
@@ -166,6 +188,10 @@ inline Value Position::score() const {
 	return score;
 }
 
+/*
+Code snippet from Stockfish <position.h>
+<code>
+*/
 inline Key Position::key() const {
 	return st->key;
 }
@@ -215,3 +241,6 @@ inline void Position::move_piece(Piece pc, Square from, Square to) {
 	index[to] = index[from];
 	pieceList[pc][index[to]] = to;
 }
+/*
+</code>
+*/

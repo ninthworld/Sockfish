@@ -5,6 +5,15 @@
 #include <cstdlib>
 #include <chrono>
 
+/*
+Stockfish, a UCI chess playing engine derived from Glaurung 2.1
+Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
+Modified code snippet from Stockfish <types.h> and <misc.h>
+<modified_code>
+*/
 typedef uint64_t Key;
 typedef uint64_t Bitboard;
 typedef std::chrono::milliseconds::rep TimePoint;
@@ -21,7 +30,16 @@ inline TimePoint now() {
 inline bool max_time(TimePoint start) {
 	return (now() - start) >= MAX_TIME;
 }
+/*
+</modified_code>
+*/
 
+/*
+Heavily modifed code snippet from Stockfish <types.h>
+Specifically: Colors, Pieces, Scores, Squares have all been changed.
+
+<modified_code>
+*/
 enum Move : int {
 	MOVE_NONE,
 	MOVE_NULL = 65
@@ -81,6 +99,11 @@ enum Depth : int {
 	DEPTH_MAX = MAX_PLY
 };
 
+/*
+NOTE: Files and Ranks have been inverted.
+This was done to accomodate a 7x8 board size
+while maintaining the divisibility by base 2
+*/
 enum Square {
 	SQ_A1, SQ_A2, SQ_A3, SQ_A4, SQ_A5, SQ_A6, SQ_A7, SQ_A8,
 	SQ_B1, SQ_B2, SQ_B3, SQ_B4, SQ_B5, SQ_B6, SQ_B7, SQ_B8,
@@ -217,6 +240,9 @@ inline Square invert(Square s) {
 inline Move invert(Move m) {
 	return make_move(invert(from_sq(m)), invert(to_sq(m)));
 }
+/*
+</modified_code>
+*/
 
 namespace ValueMap {
 
